@@ -1,3 +1,3 @@
 # microservice specific routes
 
-GET        /hello-world             uk.gov.hmrc.snsclient.controllers.MicroserviceHelloWorld.hello
+POST    /notifications    @uk.gov.hmrc.snsclient.controllers.NotificationController.notifications()
