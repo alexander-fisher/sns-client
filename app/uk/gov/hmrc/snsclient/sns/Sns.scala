@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.service
+package uk.gov.hmrc.snsclient.sns
 
 
-import java.net.URL
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
+
+import uk.gov.hmrc.snsclient.model.NotificationResult
+
+import scala.concurrent.Future
 
 @Singleton
-class Sns @Inject()( @Named("des-baseUrl") desBaseUrl: URL,
-                     @Named("des.authorization-token") authorizationToken: String,
-                     @Named("des.environment") environment: String) extends SNSService {
+class Sns @Inject()(configuration: SnsConfiguration) extends SNSService {
 
 
+  def doSomething = Future successful NotificationResult("some-token", true)
 
 }
 

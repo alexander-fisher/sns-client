@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.service
+package uk.gov.hmrc.snsclient.sns
 
-trait SNSService {
+import com.google.inject.{ImplementedBy, Singleton}
+import uk.gov.hmrc.snsclient.model.NotificationResult
 
-}
+import scala.concurrent.Future
+
+@ImplementedBy(classOf[Sns])
+trait SNSService { def doSomething:Future[NotificationResult]}

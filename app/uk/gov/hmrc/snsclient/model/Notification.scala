@@ -23,3 +23,10 @@ case class Notification (token:String)
 object Notification {
   implicit val format = Json.format[Notification]
 }
+
+
+case class NotificationResult (token:String, result:Boolean)
+
+object NotificationResult {
+  implicit val format = Json.format[NotificationResult]
+}

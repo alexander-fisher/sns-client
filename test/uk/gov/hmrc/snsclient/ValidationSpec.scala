@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.controllers
-
+package uk.gov.hmrc.snsclient
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import play.api.mvc.Result
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.snsclient.controllers.Validation
 import uk.gov.hmrc.snsclient.model.Notification
 
 
