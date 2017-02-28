@@ -2,4 +2,3 @@
 
 POST   /notifications    @uk.gov.hmrc.snsclient.controllers.NotificationController.notifications
 
-

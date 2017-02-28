@@ -16,17 +16,16 @@
 
 package uk.gov.hmrc.snsclient.controllers
 
-import org.mockito.Mockito._
+import akka.util.ByteString
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Json
+import play.api.libs.streams.Accumulator
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.snsclient.model.{Notification, NotificationResult}
-import uk.gov.hmrc.snsclient.sns.SNSService
 import uk.gov.hmrc.support.AkkaMaterializerSpec
-
-import scala.concurrent.Future
 
 class NotificationControllerSpec extends PlaySpec with MockitoSugar with AkkaMaterializerSpec {
 
@@ -34,20 +33,14 @@ class NotificationControllerSpec extends PlaySpec with MockitoSugar with AkkaMat
 
     "return 200" in {
 
-      val snsService = mock[SNSService]
-      val controller = new NotificationController(snsService)
-
-      when(snsService.doSomething).thenReturn(Future successful NotificationResult("sometoken", true))
-
+      val controller = new NotificationController(null)
       val json = Json.toJson(Notification("sometokenvalue"))
 
       val request = FakeRequest("POST", "/notifications")
+        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
         .withJsonBody(json)
-        .withHeaders(
-          "Content-Type" -> "application/json",
-          "Accept"       -> "application/vnd.hmrc.1.0+json")
 
-      val result = controller.notifications(request)
+      val result: Accumulator[ByteString, Result] = controller.notifications(request)
 
 //      contentAsJson(result) mustBe Json.toJson(NotificationResult("sometoken", true))
 //      status(result) mustBe http.Status.OK
