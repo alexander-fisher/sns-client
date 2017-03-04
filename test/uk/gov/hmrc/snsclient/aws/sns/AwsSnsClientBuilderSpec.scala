@@ -1,37 +1,34 @@
 package uk.gov.hmrc.snsclient.aws.sns
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import play.api.Configuration
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.support.DefaultTestData
 
 @RunWith(classOf[JUnitRunner])
-class AwsSnsClientBuilderSpec extends UnitSpec {
+class AwsSnsClientBuilderSpec extends UnitSpec with DefaultTestData {
 
-  private def loadConfig(properties: Map[String, String]) = Configuration from properties
-
-  def defaultConfig = Map(
-    "aws.accessKey" -> "v1",
-    "aws.secret" -> "v2",
-    "aws.signingRegion" -> "v3",
-    "aws.serviceEndpoint" -> "v4")
 
   "AwsSnsClientBuilder" should {
 
-    val configuration: SnsConfiguration = new SnsConfiguration(loadConfig(defaultConfig))
+    val configuration: SnsConfiguration = new SnsConfiguration(Configuration from Map(
+      "aws.accessKey" -> "theAccessKey",
+      "aws.secret" -> "theSecret",
+      "aws.signingRegion" -> "theSigningRegion",
+      "aws.serviceEndpoint" -> "theServiceEndpoint")
+    )
 
-    "populates AWS credentials from SnsConfiguration" in new AwsSnsClientBuilder {
+    val builder = new AwsSnsClientBuilder(configuration)
 
-      val creds: AWSStaticCredentialsProvider = credentials(configuration)
-      creds.getCredentials.getAWSAccessKeyId shouldBe configuration.accessKey
-      creds.getCredentials.getAWSSecretKey shouldBe configuration.secret
+    "populates AWS credentials from SnsConfiguration" in {
+      val credentials = builder.credentials.getCredentials
+      credentials.getAWSAccessKeyId shouldBe configuration.accessKey
+      credentials.getAWSSecretKey shouldBe configuration.secret
     }
 
-    "populates AWS endpoint from SnsConfiguration" in new AwsSnsClientBuilder {
-
-      val endpoint: EndpointConfiguration = endpoint(configuration)
+    "populates AWS endpoint from SnsConfiguration" in {
+      val endpoint = builder.endpoint
       endpoint.getServiceEndpoint shouldBe configuration.serviceEndpoint
       endpoint.getSigningRegion shouldBe configuration.signingRegion
     }

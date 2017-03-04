@@ -21,7 +21,7 @@ import uk.gov.hmrc.snsclient.model._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@ImplementedBy(classOf[SnsServiceBuilder])
+@ImplementedBy(classOf[SnsService])
 trait SnsApi {
 
   def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext): Future[Seq[DeliveryStatus]]

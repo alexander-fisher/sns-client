@@ -1,23 +1,26 @@
 package uk.gov.hmrc.snsclient.aws.sns
 
+import javax.inject.{Inject, Singleton}
+
 import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider, AWSStaticCredentialsProvider}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.sns.{AmazonSNSAsync, AmazonSNSAsyncClientBuilder}
 
-trait AwsSnsClientBuilder {
+@Singleton()
+class AwsSnsClientBuilder @Inject()(configuration: SnsConfiguration) {
 
-  def credentials(configuration: SnsConfiguration): AWSStaticCredentialsProvider = {
+  def credentials: AWSStaticCredentialsProvider = {
     new AWSStaticCredentialsProvider(new AWSCredentials {
       override def getAWSAccessKeyId: String = configuration.accessKey
       override def getAWSSecretKey: String = configuration.secret
     })
   }
 
-  def endpoint(configuration: SnsConfiguration): EndpointConfiguration = {
+  def endpoint: EndpointConfiguration = {
     new EndpointConfiguration(configuration.serviceEndpoint, configuration.signingRegion)
   }
 
-  def snsClient(credentials:AWSCredentialsProvider, endpointConfig:EndpointConfiguration): AmazonSNSAsync = {
+  private def getInstance(credentials:AWSCredentialsProvider, endpointConfig:EndpointConfiguration): AmazonSNSAsync = {
     AmazonSNSAsyncClientBuilder
       .standard
       .withCredentials(credentials)
@@ -25,7 +28,7 @@ trait AwsSnsClientBuilder {
       .build()
   }
 
-  def snsClient(configuration:SnsConfiguration): AmazonSNSAsync = {
-    snsClient(credentials(configuration), endpoint(configuration))
+  def getInstance: AmazonSNSAsync = {
+    getInstance(credentials, endpoint)
   }
 }

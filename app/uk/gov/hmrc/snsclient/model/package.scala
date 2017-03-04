@@ -34,23 +34,23 @@ package model {
   }
 
 
-  case class DeliveryStatus(notificationId:String, status: String)
+  case class DeliveryStatus(notificationId:String, status: String, error:Option[String])
 
   object DeliveryStatus {
 
-    def success(notificationId:String) = DeliveryStatus(notificationId:String, "SUCCESS")
-    def failure(notificationId:String) = DeliveryStatus(notificationId:String, "FAILURE")
+    def success(notificationId:String) = DeliveryStatus(notificationId:String, "SUCCESS", None)
+    def failure(notificationId:String, message:String = "") = DeliveryStatus(notificationId:String, "FAILURE", Some(message))
 
     implicit val format: OFormat[DeliveryStatus] =
       Json.format[DeliveryStatus]
   }
 
-  case class CreateEndpointStatus(id:String, endpointArn: String)
+  case class CreateEndpointStatus(id:String, endpointArn: String, error:Option[String])
 
   object CreateEndpointStatus {
 
-    def success(notificationId:String, endpointArn:String) = CreateEndpointStatus(notificationId:String, "SUCCESS")
-    def failure(notificationId:String) = CreateEndpointStatus(notificationId:String, "FAILURE")
+    def success(notificationId:String, endpointArn:String) = CreateEndpointStatus(notificationId:String, "SUCCESS", None)
+    def failure(notificationId:String, message:String = "") = CreateEndpointStatus(notificationId:String, "FAILURE", Some(message))
 
     implicit val format: OFormat[CreateEndpointStatus] =
       Json.format[CreateEndpointStatus]

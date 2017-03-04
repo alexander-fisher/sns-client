@@ -23,51 +23,35 @@ import com.amazonaws.services.sns.model.{CreatePlatformEndpointRequest, CreatePl
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
 import uk.gov.hmrc.snsclient.model._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future._
 import scala.language.{implicitConversions, postfixOps}
 
 
 @Singleton
-class SnsServiceBuilder @Inject()(configuration: SnsConfiguration) extends SnsApi with AwsSnsClientBuilder with AwsAsyncSupport {
-
-  private lazy val client: AmazonSNSAsync = snsClient(configuration)
+class SnsService @Inject() (client: SnsClientScalaAdapter) extends SnsApi with AwsAsyncSupport {
 
   override def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext) = {
-    traverse(notifications.map(notification => (notification, publish(notification)))) {
+
+    val publishRequests = notifications.map(n => (n, client.publish(n)))
+
+    traverse(publishRequests) {
       case (nt, futureResult) => futureResult.map(_ => DeliveryStatus.success(nt.id)) recover {
-        case e => DeliveryStatus.failure(nt.id)
+        case ex => DeliveryStatus.failure(nt.id, ex.getMessage)
       }
     }
   }
-
-  private def publish(notification: Notification)(implicit ctx:ExecutionContext) =
-    withAsyncHandler[PublishRequest, PublishResult] { handler =>
-
-      val request = new PublishRequest()
-        .withMessage(notification.message)
-        .withTargetArn(notification.targetArn)
-
-      client.publishAsync(request, handler)
-    }
 
   override def createEndpoint(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext) = {
-    traverse(endpoints.map(endpoint => (endpoint, createEndpoint(endpoint)))) {
+
+    val createEndpointRequests = endpoints.map(e => (e, client.createEndpoint(e)))
+
+    traverse(createEndpointRequests) {
       case (e, futureResult) => futureResult.map(arn => CreateEndpointStatus.success(e.id, arn.getEndpointArn)) recover {
-        case ex => CreateEndpointStatus.failure(e.id)
+        case ex => CreateEndpointStatus.failure(e.id, ex.getMessage)
       }
     }
   }
-
-  private def createEndpoint(endpoint: Endpoint)(implicit ctx:ExecutionContext) =
-    withAsyncHandler[CreatePlatformEndpointRequest, CreatePlatformEndpointResult] { handler =>
-
-      val request = new CreatePlatformEndpointRequest()
-        .withPlatformApplicationArn(endpoint.applicationArn)
-        .withToken(endpoint.deviceToken)
-
-      client.createPlatformEndpointAsync(request, handler)
-    }
 }
 
 
