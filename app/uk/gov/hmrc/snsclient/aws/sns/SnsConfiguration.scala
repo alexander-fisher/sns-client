@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.sns
+package uk.gov.hmrc.snsclient.aws.sns
 
 import javax.inject.{Inject, Singleton}
 
@@ -42,10 +42,12 @@ class SnsConfiguration @Inject()(configuration:Configuration) {
     }
   }
 
-  val accessKey: String = required("aws.accessKey", configuration)
-  val secret:    String = required("aws.secret", configuration)
+  val accessKey        : String = required("aws.accessKey", configuration)
+  val secret           : String = required("aws.secret", configuration)
+  val serviceEndpoint  : String = required("aws.serviceEndpoint", configuration)
+  val signingRegion    : String = required("aws.signingRegion", configuration)
 
-  val gcmConfiguration: Option[GcmConfiguration] = configuration getConfig "aws.platform.gcm" map GcmConfiguration
+  val gcmConfiguration : Option[GcmConfiguration] = configuration getConfig "aws.platform.gcm" map GcmConfiguration
 
   case class GcmConfiguration(gcmConfig:Configuration) {
 

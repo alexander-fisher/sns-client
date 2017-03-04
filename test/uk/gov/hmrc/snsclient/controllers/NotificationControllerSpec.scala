@@ -16,34 +16,39 @@
 
 package uk.gov.hmrc.snsclient.controllers
 
-import akka.util.ByteString
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.Json
-import play.api.libs.streams.Accumulator
-import play.api.mvc.Result
-import play.api.test.FakeRequest
+import org.junit.runner.RunWith
+import org.mockito.Mockito._
+import org.mockito.Matchers._
+import org.scalatest.junit.JUnitRunner
+import play.api.libs.json.Json._
 import play.api.test.Helpers._
-import uk.gov.hmrc.snsclient.model.{Notification, NotificationResult}
-import uk.gov.hmrc.support.AkkaMaterializerSpec
+import uk.gov.hmrc.snsclient.aws.sns.SnsApi
+import uk.gov.hmrc.snsclient.model.{BatchDeliveryStatus, DeliveryStatus, Notification, Notifications}
+import uk.gov.hmrc.support.{ControllerSpec, DefaultTestData}
 
-class NotificationControllerSpec extends PlaySpec with MockitoSugar with AkkaMaterializerSpec {
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future._
 
-  s"POST /notifications" should {
 
-    "return 200" in {
+@RunWith(classOf[JUnitRunner])
+class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
-      val controller = new NotificationController(null)
-      val json = Json.toJson(Notification("sometokenvalue"))
+  private val sns = resettingMock[SnsApi]
+  private val controller   = new NotificationController(sns)
 
-      val request = FakeRequest("POST", "/notifications")
-        .withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
-        .withJsonBody(json)
+  s"POST" should {
 
-      val result: Accumulator[ByteString, Result] = controller.notifications(request)
+    "return 200 if the Notification is successfully delivered to SNS" in {
 
-//      contentAsJson(result) mustBe Json.toJson(NotificationResult("sometoken", true))
-//      status(result) mustBe http.Status.OK
+      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
+        .thenReturn(successful(Seq(DeliveryStatus.success(defaultNotification.id))))
+
+      val requestJson = toJson(Notifications(Seq(defaultNotification)))
+
+      val result = call(controller.sendNotifications, sendNotificationRequest.withJsonBody(requestJson))
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(Map(defaultNotification.id -> "SUCCESS")))
     }
   }
 }

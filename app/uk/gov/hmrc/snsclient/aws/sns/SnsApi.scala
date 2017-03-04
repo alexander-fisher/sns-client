@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.sns
+package uk.gov.hmrc.snsclient.aws.sns
 
+import com.google.inject.ImplementedBy
+import uk.gov.hmrc.snsclient.model._
 
-import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
-import uk.gov.hmrc.snsclient.model.NotificationResult
+@ImplementedBy(classOf[SnsServiceBuilder])
+trait SnsApi {
 
-import scala.concurrent.Future
+  def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext): Future[Seq[DeliveryStatus]]
 
-@Singleton
-class Sns @Inject()(configuration: SnsConfiguration) extends SNSService {
-
-
-  def doSomething = Future successful NotificationResult("some-token", true)
-
+  def createEndpoint(endpoints:Seq[Endpoint])(implicit ctx:ExecutionContext): Future[Seq[CreateEndpointStatus]]
 }
-

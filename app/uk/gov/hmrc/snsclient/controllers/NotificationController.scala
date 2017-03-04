@@ -18,22 +18,24 @@ package uk.gov.hmrc.snsclient.controllers
 
 import javax.inject.{Inject, Singleton}
 
-import play.api.libs.iteratee.Enumeratee
 import play.api.libs.json.Json
-import play.api.mvc.Action
+import play.api.mvc._
 import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.snsclient.model.Notification
-import uk.gov.hmrc.snsclient.sns.SNSService
+import uk.gov.hmrc.snsclient.model._
 import play.api.libs.concurrent.Execution.Implicits._
+import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 
-import scala.concurrent.Future
 
 @Singleton
-class NotificationController @Inject() (sns:SNSService) extends BaseController {
+class NotificationController @Inject() (sns:SnsApi) extends BaseController with Validation {
 
-  val notifications: Action[Notification] = Action.async(parse.json[Notification]) { implicit req =>
-    withJsonBody[Notification] { n =>
-      Future successful Ok(Json.toJson(req.body))
+  val sendNotifications: Action[Notifications] = Action.async(parse.json[Notifications]) { implicit req =>
+    sns.publish(req.body.notifications)(defaultContext).map {
+      deliveryStatuses => Ok(Json.toJson(BatchDeliveryStatus(deliveryStatuses)))
+    } recover {
+      case e => BadRequest
     }
   }
 }
+
+

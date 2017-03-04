@@ -20,32 +20,26 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import play.api.mvc.Result
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.snsclient.controllers.Validation
-import uk.gov.hmrc.snsclient.model.Notification
+import uk.gov.hmrc.snsclient.controllers.{ErrorResults, Validation}
+import uk.gov.hmrc.support.DefaultTestData
 
 
 @RunWith(classOf[JUnitRunner])
-class ValidationSpec extends UnitSpec with Validation {
+class ValidationSpec extends UnitSpec with Validation with DefaultTestData {
 
   private implicit class ResultChecker(r: Result) {
     def is(r1: Result) = status(r1) shouldBe status(r)
   }
 
-  private def responseFor(notification: Notification): Result = {
-    checkForErrors(notification).head
-  }
-
-  private val validInvite: Notification = Notification("token")
-
 
   "checkForErrors" should {
 
     "fail with BadRequest if the token is empty" in {
-      responseFor(validInvite.copy(token = "")) is BadRequest
+      checkForErrors(defaultNotification.copy(targetArn = "")).head is ErrorResults.MissingToken
     }
 
-//    "pass when the token field is non-empty" in {
-//      checkForErrors(validInvite) shouldBe Nil
-//    }
+    "pass when the token field is non-empty" in {
+      checkForErrors(defaultNotification) shouldBe Nil
+    }
   }
 }

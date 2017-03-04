@@ -23,13 +23,10 @@ trait Validation extends Results {
 
   private type Validation = (Notification) => Option[Result]
 
-
-  private def hasAToken: (Notification) => Option[Result] = (n) => {
-    val token: Result = ErrorResults.MissingToken
-    val someResult: Option[Result] = Some(token)
-    someResult
+  private def hasAToken: (Notification) => Option[Result] = (notification) => {
+   if (notification.targetArn.isEmpty) Some( ErrorResults.MissingToken ) else None
   }
 
-  def checkForErrors(notification: Notification): Seq[Result] =
+  def checkForErrors(notification: Notification) : Seq[Result] =
     Seq(hasAToken).flatMap(fn => fn(notification))
 }
