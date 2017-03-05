@@ -1,4 +1,6 @@
 # microservice specific routes
 
-POST   /notifications    @uk.gov.hmrc.snsclient.controllers.NotificationController.notifications
+POST   /notifications    @uk.gov.hmrc.snsclient.controllers.NotificationController.sendNotifications
+
+POST   /endpoints        @uk.gov.hmrc.snsclient.controllers.EndpointsController.createEndpoints
 

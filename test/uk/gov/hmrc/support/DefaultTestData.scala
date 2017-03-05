@@ -11,9 +11,10 @@ trait DefaultTestData {
   val defaultNotification = Notification("registrationToken", "Tax is fun!", "Android", "GUID")
 
 
-  val sendNotificationRequest   = FakeRequest("POST", routes.NotificationController.notifications().url).withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+  val sendNotificationRequest   = FakeRequest("POST", routes.NotificationController.sendNotifications().url).withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
 
   val defaultConfig = Map(
+    "aws.platform.gcm.osName" -> "Android",
     "aws.platform.gcm.applicationName" -> "gcmApplicationName",
     "aws.platform.gcm.registrationId" -> "gcmRegistrationId",
     "aws.platform.gcm.serverApiKey" -> "gcmServerApiKey",
@@ -24,5 +25,5 @@ trait DefaultTestData {
 
   val defaultSnsConfiguration = new SnsConfiguration(Configuration from defaultConfig)
 
-  val defaultEndpoint = Endpoint("id", defaultSnsConfiguration.gcmConfiguration.get.applicationName, "deviceToken")
+  val defaultEndpoint = Endpoint("id", defaultSnsConfiguration.gcmConfiguration.get.osName, "deviceToken")
 }

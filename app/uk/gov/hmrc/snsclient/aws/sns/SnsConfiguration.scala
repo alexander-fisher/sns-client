@@ -51,8 +51,13 @@ class SnsConfiguration @Inject()(configuration:Configuration) {
 
   case class GcmConfiguration(gcmConfig:Configuration) {
 
+    val osName:          String = required("osName", gcmConfig)
     val registrationId:  String = required("registrationId", gcmConfig)
     val serverApiKey:    String = required("serverApiKey", gcmConfig)
     val applicationName: String = required("applicationName", gcmConfig)
+  }
+
+  val platformsApplicationsOsMap: Map[String, String] = {
+    Seq(gcmConfiguration).flatten.map(platform => platform.osName -> platform.applicationName) toMap
   }
 }

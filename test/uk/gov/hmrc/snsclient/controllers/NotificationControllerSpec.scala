@@ -48,7 +48,7 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
       val result = call(controller.sendNotifications, sendNotificationRequest.withJsonBody(requestJson))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(Map(defaultNotification.id -> "SUCCESS")))
+      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(Seq(DeliveryStatus.success("GUID"))))
     }
   }
 }
