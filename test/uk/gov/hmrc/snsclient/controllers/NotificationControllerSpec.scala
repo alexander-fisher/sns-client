@@ -36,6 +36,9 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
   private val sns = resettingMock[SnsApi]
   private val controller   = new NotificationController(sns)
 
+  private val notificationsUrl: String = routes.NotificationController.sendNotifications().url
+
+
   s"POST" should {
 
     "return 200 if the Notification is successfully delivered to SNS" in {
@@ -45,7 +48,7 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       val requestJson = toJson(Notifications(Seq(defaultNotification)))
 
-      val result = call(controller.sendNotifications, sendNotificationRequest.withJsonBody(requestJson))
+      val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(requestJson))
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(Seq(DeliveryStatus.success("GUID"))))

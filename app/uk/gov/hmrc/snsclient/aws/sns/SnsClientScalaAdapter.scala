@@ -36,7 +36,7 @@ class SnsClientScalaAdapter @Inject() (builder: AwsSnsClientBuilder) extends Aws
 
       val request = new PublishRequest()
         .withMessage(notification.message)
-        .withTargetArn(notification.targetArn)
+        .withTargetArn(notification.endpointArn)
 
       client.publishAsync(request, handler)
     }

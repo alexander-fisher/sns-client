@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.controllers
+package uk.gov.hmrc.snsclient
 
-import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.snsclient.model.Notification
+import org.scalatest.Suite
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
 
-trait Validation extends Results {
+trait OnePerSuiteWithoutMetrics extends OneAppPerSuite { this: Suite =>
 
-  private type Validation = (Notification) => Option[Result]
-
-  private def hasAToken: (Notification) => Option[Result] = (notification) => {
-   if (notification.endpointArn.isEmpty) Some( ErrorResults.MissingToken ) else None
-  }
-
-  def checkForErrors(notification: Notification) : Seq[Result] =
-    Seq(hasAToken).flatMap(fn => fn(notification))
+  override implicit lazy val app: Application = MetricsDisabled.appWithMetricsDisabled()
 }

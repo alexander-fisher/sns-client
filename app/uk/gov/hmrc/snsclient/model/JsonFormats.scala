@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.controllers
+package uk.gov.hmrc.snsclient.model
 
-import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.snsclient.model.Notification
+object JsonFormats {
 
-trait Validation extends Results {
-
-  private type Validation = (Notification) => Option[Result]
-
-  private def hasAToken: (Notification) => Option[Result] = (notification) => {
-   if (notification.endpointArn.isEmpty) Some( ErrorResults.MissingToken ) else None
-  }
-
-  def checkForErrors(notification: Notification) : Seq[Result] =
-    Seq(hasAToken).flatMap(fn => fn(notification))
 }

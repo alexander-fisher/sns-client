@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.snsclient.aws.sns
 
 import com.amazonaws.services.sns.model.{CreatePlatformEndpointResult, PublishResult}
@@ -59,7 +75,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
       val service = new SnsService(client, new SnsConfiguration(configuration))
       val result = await(service.createEndpoint(Seq(defaultEndpoint)))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.success(defaultEndpoint.id, endpointResult.getEndpointArn)
+      result.head shouldBe CreateEndpointStatus.success(defaultEndpoint.deviceId, endpointResult.getEndpointArn)
     }
 
     "return a CreateEndpointStatus(\"FAILURE\") when the SNS client fails" in {
@@ -75,7 +91,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
       val service = new SnsService(client, new SnsConfiguration(configuration))
       val result = await(service.createEndpoint(Seq(defaultEndpoint)))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.failure(defaultEndpoint.id, "oh noes!")
+      result.head shouldBe CreateEndpointStatus.failure(defaultEndpoint.deviceId, "oh noes!")
     }
 
 
@@ -83,7 +99,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
       val service = new SnsService(client, defaultSnsConfiguration)
       val result = await(service.createEndpoint(Seq(defaultEndpoint.copy(os = "Baidu"))))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.failure(defaultEndpoint.id, "No platform application can be found for the os[Baidu]")
+      result.head shouldBe CreateEndpointStatus.failure(defaultEndpoint.deviceId, "No platform application can be found for the os[Baidu]")
     }
   }
 }

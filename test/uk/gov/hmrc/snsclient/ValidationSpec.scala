@@ -35,7 +35,7 @@ class ValidationSpec extends UnitSpec with Validation with DefaultTestData {
   "checkForErrors" should {
 
     "fail with BadRequest if the token is empty" in {
-      checkForErrors(defaultNotification.copy(targetArn = "")).head is ErrorResults.MissingToken
+      checkForErrors(defaultNotification.copy(endpointArn = "")).head is ErrorResults.MissingToken
     }
 
     "pass when the token field is non-empty" in {

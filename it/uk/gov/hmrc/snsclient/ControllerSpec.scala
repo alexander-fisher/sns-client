@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.controllers
+package uk.gov.hmrc.snsclient
 
-import play.api.mvc.{Result, Results}
-import uk.gov.hmrc.snsclient.model.Notification
+import org.scalatest.Suite
+import org.scalatest.concurrent.ScalaFutures
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.support.OneAppPerSuiteWithoutMetrics
 
-trait Validation extends Results {
+import scala.concurrent.ExecutionContext
 
-  private type Validation = (Notification) => Option[Result]
+trait ControllerSpec
+    extends UnitSpec
+    with ScalaFutures
+    with OneAppPerSuiteWithoutMetrics { this: Suite =>
 
-  private def hasAToken: (Notification) => Option[Result] = (notification) => {
-   if (notification.endpointArn.isEmpty) Some( ErrorResults.MissingToken ) else None
-  }
 
-  def checkForErrors(notification: Notification) : Seq[Result] =
-    Seq(hasAToken).flatMap(fn => fn(notification))
+  implicit val ctx: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
 }

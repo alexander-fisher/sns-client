@@ -44,8 +44,8 @@ class AwsSnsClientBuilder @Inject()(configuration: SnsConfiguration) {
       .standard
       .withCredentials(credentials)
       .withRegion(Regions.EU_WEST_1)
-        .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTP).withProxyHost("localhost").withProxyPort(8888))
-//      .withEndpointConfiguration(endpointConfig)
+//        .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTP).withProxyHost("localhost").withProxyPort(8888))
+      .withEndpointConfiguration(endpointConfig)
       .build()
   }
 

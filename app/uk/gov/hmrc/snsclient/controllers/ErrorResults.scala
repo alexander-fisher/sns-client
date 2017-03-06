@@ -19,7 +19,8 @@ package uk.gov.hmrc.snsclient.controllers
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.Result
-import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results._
+import uk.gov.hmrc.api.controllers.ErrorInternalServerError
 
 object ErrorResults {
 
@@ -29,5 +30,7 @@ object ErrorResults {
     override def writes(body: ErrorBody): JsValue = Json.obj("code" -> body.code, "message" -> body.message)
   }
 
-  val MissingToken: Result = BadRequest(toJson(ErrorBody("MISSING_TOKEN", "No token was found in the request")))
+  val MissingToken: Result      = BadRequest(toJson(ErrorBody("MISSING_TOKEN", "No token was found in the request")))
+  val ClientShouldRetry: Result = TooManyRequests(toJson(ErrorBody("MISSING_TOKEN", "No token was found in the request")))
+  val ServerError: Result       = InternalServerError(toJson(ErrorInternalServerError))
 }

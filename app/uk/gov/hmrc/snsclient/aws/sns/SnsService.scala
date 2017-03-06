@@ -48,8 +48,8 @@ class SnsService @Inject() (client: SnsClientScalaAdapter, configuration:SnsConf
   override def createEndpoint(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext) = {
 
     traverse(batchCreateEndpoints(endpoints)) {
-      case (e, futureResult) => futureResult.map(arn => CreateEndpointStatus.success(e.id, arn.getEndpointArn)) recover {
-        case ex => CreateEndpointStatus.failure(e.id, ex.getMessage)
+      case (e, futureResult) => futureResult.map(arn => CreateEndpointStatus.success(e.deviceId, arn.getEndpointArn)) recover {
+        case ex => CreateEndpointStatus.failure(e.deviceId, ex.getMessage)
       }
     }
   }
