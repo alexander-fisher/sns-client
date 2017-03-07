@@ -44,8 +44,8 @@ class ValidationSpec extends UnitSpec with Validation {
       responseFor(validInvite.copy(token = "")) is BadRequest
     }
 
-    "pass when the token field is non-empty" in {
-      checkForErrors(validInvite) shouldBe Nil
-    }
+//    "pass when the token field is non-empty" in {
+//      checkForErrors(validInvite) shouldBe Nil
+//    }
   }
 }
