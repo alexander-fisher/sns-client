@@ -18,7 +18,7 @@ package uk.gov.hmrc.snsclient.sns
 
 import javax.inject.{Inject, Singleton}
 
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 
 import scala.language.postfixOps
 
@@ -29,8 +29,13 @@ class SnsConfiguration @Inject()(configuration:Configuration) {
   private def required(key:String, configuration:Configuration): String = {
     configuration getString key match {
       case Some(v) if v nonEmpty => v
-      case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
-      case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
+      case Some(v) => Logger.info("property at [$key] was defined but EMPTY defaulting the value")
+      "should-be-not-empty"
+      //throw new IllegalArgumentException(s"property at [$key] was empty")
+      case _ =>
+        Logger.info("property at [$key] was NOT FOUND")
+      //throw new IllegalArgumentException(s"property at [$key] was missing")
+        "should-be-not-empty"
     }
   }
 
