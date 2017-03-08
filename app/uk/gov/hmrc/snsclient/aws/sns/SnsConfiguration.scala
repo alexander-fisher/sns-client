@@ -29,16 +29,8 @@ class SnsConfiguration @Inject()(configuration:Configuration) {
   private def required(key:String, configuration:Configuration): String = {
     configuration getString key match {
       case Some(v) if v nonEmpty => v
-      case Some(v) => {
-        val exception = new IllegalArgumentException(s"property at [$key] was empty")
-        Logger.error(s"property at [$key] was defined but EMPTY defaulting the value", exception)
-        throw exception
-      }
-      case _ => {
-        val exception = new IllegalArgumentException(s"property at [$key] was missing")
-        Logger.error(s"property at [$key] was NOT FOUND", exception)
-        throw exception
-      }
+      case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
+      case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
     }
   }
 
