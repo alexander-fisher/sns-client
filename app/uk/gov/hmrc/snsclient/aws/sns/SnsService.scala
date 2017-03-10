@@ -19,11 +19,12 @@ package uk.gov.hmrc.snsclient.aws.sns
 import javax.inject.{Inject, Singleton}
 
 import com.amazonaws.services.sns.model.CreatePlatformEndpointResult
+import play.api.Logger
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
 import uk.gov.hmrc.snsclient.model._
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{implicitConversions, postfixOps}
 
 
@@ -39,8 +40,8 @@ class SnsService @Inject() (client: SnsClientScalaAdapter, configuration:SnsConf
     val publishRequests = notifications.map(n => (n, client.publish(n)))
 
     traverse(publishRequests) {
-      case (nt, futureResult) => futureResult.map(_ => DeliveryStatus.success(nt.id)) recover {
-        case ex => DeliveryStatus.failure(nt.id, ex.getMessage)
+      case (request, result) => result.map(_ => DeliveryStatus.success(request.id)) recover {
+        case ex => DeliveryStatus.failure(request.id, ex.getMessage)
       }
     }
   }
@@ -48,8 +49,10 @@ class SnsService @Inject() (client: SnsClientScalaAdapter, configuration:SnsConf
   override def createEndpoint(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext) = {
 
     traverse(batchCreateEndpoints(endpoints)) {
-      case (e, futureResult) => futureResult.map(arn => CreateEndpointStatus.success(e.deviceId, arn.getEndpointArn)) recover {
-        case ex => CreateEndpointStatus.failure(e.deviceId, ex.getMessage)
+      case (request, result) => result.map(arn => CreateEndpointStatus.success(request.registrationToken, arn.getEndpointArn)) recover {
+        case ex =>
+          Logger.warn("SNS Application Endpoint creation failed", ex)
+          CreateEndpointStatus.failure(request.registrationToken)
       }
     }
   }

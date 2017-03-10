@@ -24,82 +24,73 @@ import org.scalatest.junit.JUnitRunner
 import play.api.Configuration
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.snsclient.model.{CreateEndpointStatus, DeliveryStatus}
-import uk.gov.hmrc.support.{DefaultTestData, ResettingMockitoSugar}
+import uk.gov.hmrc.support.{ConfigKeys, DefaultTestData, ResettingMockitoSugar}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future._
 
 @RunWith(classOf[JUnitRunner])
 class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTestData with ScalaFutures {
 
   implicit val ctx: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
-  private val client = resettingMock[SnsClientScalaAdapter]
+
+  val client = resettingMock[SnsClientScalaAdapter]
+  val applicationArn = "arn:1234567890:foo"
 
   "SnsServiceSpec" should {
 
-    "return a DeliveryStatus(\"SUCCESS\") when SNS client publishes successfully" in {
+    "return a DeliveryStatus(\"Success\") when SNS client publishes successfully" in {
 
-      when(client.publish(defaultNotification))
-        .thenReturn(Future successful new PublishResult().withMessageId("message-id"))
-
-      val service = new SnsService(client, defaultSnsConfiguration)
-      val result = await(service.publish(Seq(defaultNotification)))
-      result.size shouldBe 1
-      result.head shouldBe DeliveryStatus.success("GUID")
-    }
-
-    "return a DeliveryStatus(\"FAILURE\") when SNS client fails" in {
-
-      when(client.publish(defaultNotification))
-        .thenReturn(Future failed new RuntimeException("oh noes!"))
+      when(client.publish(androidNotification)).thenReturn(successful(new PublishResult()))
 
       val service = new SnsService(client, defaultSnsConfiguration)
-      val result = await(service.publish(Seq(defaultNotification)))
+      val result = await(service.publish(Seq(androidNotification)))
       result.size shouldBe 1
-      result.head shouldBe DeliveryStatus.failure("GUID", "oh noes!")
+      result.head shouldBe DeliveryStatus.success(androidNotification.id)
+    }
+
+    "return a DeliveryStatus(\"Failed\") when SNS client fails" in {
+
+      when(client.publish(androidNotification)).thenReturn(failed(new RuntimeException("oh noes!")))
+
+      val service = new SnsService(client, defaultSnsConfiguration)
+      val result = await(service.publish(Seq(androidNotification)))
+      result.size shouldBe 1
+      result.head shouldBe DeliveryStatus.failure(androidNotification.id, "oh noes!")
 
     }
 
+    "return a CreateEndpointStatus(\"Success\") when the SNS client creates the application endpoint" in {
 
-    "return a CreateEndpointStatus(\"SUCCESS\") when the SNS client creates the application endpoint" in {
-
-      val configuration = Configuration from defaultConfig
-        .updated("aws.platform.gcm.osName", "Android")
-        .updated("aws.platform.gcm.applicationName", "gcmApplicationName")
-
+      val configuration = Configuration from defaultConfig.updated(ConfigKeys.gcmApplicaitonArnKey, applicationArn)
 
       val endpointResult = new CreatePlatformEndpointResult()
       endpointResult.setEndpointArn("endpoint-arn")
 
-      when(client.createEndpoint(defaultEndpoint, "gcmApplicationName")).thenReturn(Future successful endpointResult)
+      when(client.createEndpoint(androidEndpoint, applicationArn)).thenReturn(successful(endpointResult))
 
       val service = new SnsService(client, new SnsConfiguration(configuration))
-      val result = await(service.createEndpoint(Seq(defaultEndpoint)))
+      val result = await(service.createEndpoint(Seq(androidEndpoint)))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.success(defaultEndpoint.deviceId, endpointResult.getEndpointArn)
+      result.head shouldBe CreateEndpointStatus.success(androidEndpoint.registrationToken, endpointResult.getEndpointArn)
     }
 
-    "return a CreateEndpointStatus(\"FAILURE\") when the SNS client fails" in {
+    "return a CreateEndpointStatus(\"Failed\") when the SNS client fails" in {
 
-      val configuration = Configuration from defaultConfig
-        .updated("aws.platform.gcm.osName", "Android")
-        .updated("aws.platform.gcm.applicationName", "gcmApplicationName")
-
-
-      when(client.createEndpoint(defaultEndpoint, "gcmApplicationName"))
-        .thenReturn(Future failed new RuntimeException("oh noes!"))
+      val configuration = Configuration from defaultConfig.updated(ConfigKeys.gcmApplicaitonArnKey, applicationArn)
+      when(client.createEndpoint(androidEndpoint, applicationArn)).thenReturn(failed(new RuntimeException("oh noes!")))
 
       val service = new SnsService(client, new SnsConfiguration(configuration))
-      val result = await(service.createEndpoint(Seq(defaultEndpoint)))
+      val result = await(service.createEndpoint(Seq(androidEndpoint)))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.failure(defaultEndpoint.deviceId, "oh noes!")
+      result.head shouldBe CreateEndpointStatus.failure(androidEndpoint.registrationToken, "oh noes!")
     }
 
-
-    "return a CreateEndpointStatus(\"FAILURE\") when the endpoint contains an unknown OS" in {
+    "return a CreateEndpointStatus(\"Failed\") when the endpoint contains an unknown OS" in {
       val service = new SnsService(client, defaultSnsConfiguration)
-      val result = await(service.createEndpoint(Seq(defaultEndpoint.copy(os = "Baidu"))))
+      val result = await(service.createEndpoint(Seq(androidEndpoint.copy(os = "Baidu"))))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.failure(defaultEndpoint.deviceId, "No platform application can be found for the os[Baidu]")
+      result.head shouldBe CreateEndpointStatus.failure(androidEndpoint.registrationToken, "No platform application can be found for the os[Baidu]")
     }
   }
 }

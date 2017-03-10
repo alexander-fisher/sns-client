@@ -39,19 +39,50 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
   private val notificationsUrl: String = routes.NotificationController.sendNotifications().url
 
 
-  s"POST" should {
+  s"POST to $notificationsUrl" should {
 
-    "return 200 if the Notification is successfully delivered to SNS" in {
+    "return 200 and the delivery status for a single successful notification" in {
 
-      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
-        .thenReturn(successful(Seq(DeliveryStatus.success(defaultNotification.id))))
+      val response = Seq(DeliveryStatus.success(androidNotification.id))
 
-      val requestJson = toJson(Notifications(Seq(defaultNotification)))
+      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(requestJson))
+      val request = toJson(Notifications(Seq(androidNotification)))
+
+      val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(Seq(DeliveryStatus.success("GUID"))))
+      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+    }
+
+
+    "return 200 and the delivery status for 2 successful notification" in {
+
+      val response = Seq(DeliveryStatus.success(androidNotification.id), DeliveryStatus.success(androidNotification.id))
+
+      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
+
+      val request = toJson(Notifications(Seq(androidNotification, androidNotification)))
+
+      val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+    }
+
+
+    "return 200 and the delivery status for 1 successful and 1 failed notification" in {
+
+      val response = Seq(DeliveryStatus.success(androidNotification.id), DeliveryStatus.failure(androidNotification.id))
+
+      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
+
+      val request = toJson(Notifications(Seq(androidNotification, androidNotification)))
+
+      val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
     }
   }
 }

@@ -39,13 +39,15 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
   s"POST" should {
 
-    val statusSuccessful = CreateEndpointStatus.success(defaultNotification.id, "endpointArn")
+    val statusSuccessful = CreateEndpointStatus.success(androidNotification.id, "endpointArn")
 
     "return 200 with Some(EndpointArn) if the Endpoint is returned by SNS" in {
 
       when(sns.createEndpoint(any[Seq[Endpoint]])(any[ExecutionContext])).thenReturn(successful(Seq(statusSuccessful)))
 
-      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(defaultEndpoint)))))
+      println(toJson(Endpoints(Seq(androidEndpoint))))
+
+      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(statusSuccessful)))
@@ -55,7 +57,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       when(sns.createEndpoint(any[Seq[Endpoint]])(any[ExecutionContext])).thenReturn(successful(Seq(statusSuccessful)))
 
-      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(defaultEndpoint)))))
+      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(statusSuccessful)))

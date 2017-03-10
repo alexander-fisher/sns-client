@@ -28,7 +28,6 @@ import uk.gov.hmrc.snsclient.model.{BatchEndpointsStatus, Endpoints}
 @Singleton
 class EndpointsController @Inject() (sns:SnsApi) extends BaseController with Validation {
 
-
   val createEndpoints: Action[Endpoints] = Action.async(parse.json[Endpoints]) { implicit req =>
     sns.createEndpoint(req.body.endpoints)(defaultContext).map {
       deliveryStatuses => Ok(Json.toJson(BatchEndpointsStatus(deliveryStatuses)))
@@ -37,6 +36,3 @@ class EndpointsController @Inject() (sns:SnsApi) extends BaseController with Val
     }
   }
 }
-
-
-class EndpointsWithARNS[A](val endpoints: Endpoints, request: Request[A]) extends WrappedRequest[A](request)

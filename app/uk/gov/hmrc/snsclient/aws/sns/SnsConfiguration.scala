@@ -18,38 +18,26 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import javax.inject.{Inject, Singleton}
 
-import play.api.{Configuration, Logger}
+import play.api.Configuration
+import uk.gov.hmrc.snsclient.aws.AwsConfiguration
 
 import scala.language.postfixOps
 
 
 @Singleton
-class SnsConfiguration @Inject()(configuration:Configuration) {
+class SnsConfiguration @Inject()(val configuration:Configuration) extends AwsConfiguration {
 
-  private def required(key:String, configuration:Configuration): String = {
-    configuration getString key match {
-      case Some(v) if v nonEmpty => v
-      case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
-      case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
-    }
-  }
+  private val AndroidConfig = "aws.platform.gcm"
 
-  val accessKey        : String = required("aws.accessKey", configuration)
-  val secret           : String = required("aws.secret", configuration)
-  val serviceEndpoint  : String = required("aws.serviceEndpoint", configuration)
-  val signingRegion    : String = required("aws.signingRegion", configuration)
-
-  val gcmConfiguration : Option[GcmConfiguration] = configuration getConfig "aws.platform.gcm" map GcmConfiguration
+  val gcmConfiguration : Option[GcmConfiguration] = configuration getConfig AndroidConfig map GcmConfiguration
 
   case class GcmConfiguration(gcmConfig:Configuration) {
-
     val osName:          String = required("osName", gcmConfig)
-    val registrationId:  String = required("registrationId", gcmConfig)
-    val serverApiKey:    String = required("serverApiKey", gcmConfig)
-    val applicationName: String = required("applicationName", gcmConfig)
+    val apiKey:          String = required("apiKey", gcmConfig)
+    val applicationArn:  String = required("applicationArn", gcmConfig)
   }
 
   val platformsApplicationsOsMap: Map[String, String] = {
-    Seq(gcmConfiguration).flatten.map(platform => platform.osName -> platform.applicationName) toMap
+    Seq(gcmConfiguration).flatten.map(platform => platform.osName -> platform.applicationArn) toMap
   }
 }

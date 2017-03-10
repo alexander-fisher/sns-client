@@ -25,16 +25,15 @@ import uk.gov.hmrc.snsclient.model._
 import play.api.libs.concurrent.Execution.Implicits._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 
-//einB0O0Mj9c:APA91bFvoRCQ0FdrYy0UBKgy84vTBvL3YEUDFnVyzYRQQ63raJg91rN2VIzQrkBfmeIZkev_uX0eSZSgWjPzIEuVC2yDMi8RIhwLu8FZtIgpngHHyelEKh3GrjfsIE5zcHSWkuF3_3bM
 @Singleton
-class NotificationController @Inject() (sns:SnsApi) extends BaseController with Validation {
+class NotificationController @Inject() (sns:SnsApi) extends BaseController with ErrorHandling {
 
   val sendNotifications: Action[Notifications] = Action.async(parse.json[Notifications]) { implicit req =>
-    sns.publish(req.body.notifications)(defaultContext).map {
-      deliveryStatuses => Ok(Json.toJson(BatchDeliveryStatus(deliveryStatuses)))
-    } recover {
-      case e => BadRequest
-    }
+      sns.publish(req.body.notifications)(defaultContext).map {
+        deliveryStatuses => Ok(Json.toJson(BatchDeliveryStatus(deliveryStatuses)))
+      } recover {
+        case e => BadRequest
+      }
   }
 }
 

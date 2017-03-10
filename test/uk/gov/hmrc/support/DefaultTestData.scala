@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.support
 
+import java.util.UUID
+
 import play.api.Configuration
 import play.api.test.FakeRequest
 import uk.gov.hmrc.snsclient.aws.sns.SnsConfiguration
@@ -23,19 +25,30 @@ import uk.gov.hmrc.snsclient.model.{Endpoint, Notification}
 
 trait DefaultTestData {
 
-  def postSnsRequest(url :String) = FakeRequest("POST", url).withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
+  import ConfigKeys._
+
+  def postSnsRequest(url: String) = FakeRequest("POST", url).withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
 
   val defaultConfig = Map(
-    "aws.platform.gcm.osName" -> "Android",
-    "aws.platform.gcm.applicationName" -> "gcmApplicationName",
-    "aws.platform.gcm.registrationId" -> "gcmRegistrationId",
-    "aws.platform.gcm.serverApiKey" -> "gcmServerApiKey",
-    "aws.accessKey" -> "theAccessKey",
-    "aws.secret" -> "theSecret",
-    "aws.signingRegion" -> "theSigningRegion",
-    "aws.serviceEndpoint" -> "theServiceEndpoint")
+    gcmOsKey -> "Android",
+    gcmApiKey -> "test-apiKey",
+    awsAccessKey -> "test-accessKey",
+    awsSecretKey -> "test-secret",
+    gcmApplicaitonArnKey -> "test-applicationArn",
+    awsRegionKey -> "eu-west-1"
+  )
 
   val defaultSnsConfiguration = new SnsConfiguration(Configuration from defaultConfig)
-  val defaultNotification     = Notification("registrationToken", "Tax is fun!", "Android", "GUID")
-  val defaultEndpoint         = Endpoint("id", defaultSnsConfiguration.gcmConfiguration.get.osName, "deviceToken")
+  val androidNotification : Notification = androidNotification(UUID.randomUUID().toString)
+  def androidNotification(id:String) = Notification("registrationToken", "Tax is fun!", "Android", id)
+  val androidEndpoint = Endpoint(defaultSnsConfiguration.gcmConfiguration.get.osName, "deviceToken")
+}
+
+object ConfigKeys {
+  val gcmOsKey = "aws.platform.gcm.osName"
+  val gcmApiKey = "aws.platform.gcm.apiKey"
+  val gcmApplicaitonArnKey = "aws.platform.gcm.applicationArn"
+  val awsAccessKey = "aws.accessKey"
+  val awsSecretKey = "aws.secret"
+  val awsRegionKey = "aws.region"
 }

@@ -20,54 +20,65 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import play.api.Configuration
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.support.ConfigKeys.{gcmApplicaitonArnKey, _}
 
 @RunWith(classOf[JUnitRunner])
 class SnsConfigurationSpec extends UnitSpec {
 
-  private def loadConfig(properties: Map[String, String]) = Configuration from properties
+  def loadConfig(properties: Map[String, String]): Configuration = Configuration from properties
 
-  def defaultConfig = Map(
-    "aws.accessKey" -> "v1",
-    "aws.secret" -> "v2",
-    "aws.signingRegion" -> "v3",
-    "aws.serviceEndpoint" -> "v4")
-
-  private def requiresTheKey(key: String) = {
-    intercept[IllegalArgumentException] {
-      new SnsConfiguration(loadConfig(defaultConfig - key))
-    }.getMessage shouldBe s"property at [$key] was missing"
-  }
-
-  private def keyIsNotEmpty(key: String) = {
-    intercept[IllegalArgumentException] {
-      new SnsConfiguration(loadConfig(defaultConfig updated(key, "")))
-    }.getMessage shouldBe s"property at [$key] was empty"
-  }
 
   "SnsConfiguration" should {
 
-    "reads config from application.conf" in {
-      new SnsConfiguration(loadConfig(defaultConfig))
+    val config = Map (
+      awsAccessKey -> "v1",
+      awsSecretKey -> "v2"
+    )
+
+    s"fail to load if AWS $awsAccessKey is not set" in {
+      config.shouldFailWithoutKey(awsAccessKey)
+      config.shouldFailIfKeyIsEmpty(awsAccessKey)
     }
 
-    "requires an accessKey to be set" in {
-      requiresTheKey("aws.accessKey")
-      keyIsNotEmpty("aws.accessKey")
+    s"fail to load if AWS $awsSecretKey is not set" in {
+      config.shouldFailWithoutKey(awsSecretKey)
+      config.shouldFailIfKeyIsEmpty(awsSecretKey)
     }
 
-    "requires an secret to be set" in {
-      requiresTheKey("aws.secret")
-      keyIsNotEmpty("aws.secret")
+
+    val androidConfig = config ++ Map (
+      gcmApiKey -> "api",
+      gcmApplicaitonArnKey -> "arn",
+      gcmOsKey -> "Android"
+    )
+
+    s"fail if $gcmOsKey is missing from the Android configuration" in {
+      androidConfig.shouldFailWithoutKey(gcmOsKey)
+      androidConfig.shouldFailIfKeyIsEmpty(gcmOsKey)
     }
 
-    "requires an signingRegion to be set" in {
-      requiresTheKey("aws.signingRegion")
-      keyIsNotEmpty("aws.signingRegion")
+    s"fail if $gcmApplicaitonArnKey is missing from the Android configuration" in {
+      androidConfig.shouldFailWithoutKey(gcmApplicaitonArnKey)
+      androidConfig.shouldFailIfKeyIsEmpty(gcmApplicaitonArnKey)
     }
 
-    "requires an serviceEndpoint to be set" in {
-      requiresTheKey("aws.serviceEndpoint")
-      keyIsNotEmpty("aws.serviceEndpoint")
+    s"fail if $gcmApiKey is missing from the Android configuration" in {
+      androidConfig.shouldFailWithoutKey(gcmApiKey)
+      androidConfig.shouldFailIfKeyIsEmpty(gcmApiKey)
     }
+
+    "build a map of applicationArns by OS name" in {
+      new SnsConfiguration(loadConfig(androidConfig)).platformsApplicationsOsMap shouldBe Map("Android" -> "arn")
+    }
+  }
+
+
+
+  implicit def toHelper(config:Map[String, String]): KeyHelper = new KeyHelper(config)
+
+  class KeyHelper(config: Map[String, String]) {
+    def shouldFailWithoutKey(key:String)   = shouldFail(config - key)
+    def shouldFailIfKeyIsEmpty(key:String) = shouldFail(config updated(key, ""))
+    private def shouldFail(properties:Map[String, String]) = intercept[IllegalArgumentException](new SnsConfiguration(loadConfig(properties)))
   }
 }

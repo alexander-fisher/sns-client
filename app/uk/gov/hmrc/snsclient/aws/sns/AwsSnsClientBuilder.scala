@@ -18,38 +18,47 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import javax.inject.{Inject, Singleton}
 
-import com.amazonaws.{ClientConfiguration, Protocol}
-import com.amazonaws.auth.{AWSCredentials, AWSCredentialsProvider, AWSStaticCredentialsProvider}
+import com.amazonaws.ClientConfiguration
+import com.amazonaws.auth.{AWSCredentials, AWSStaticCredentialsProvider}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
-import com.amazonaws.partitions.model.Region
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.sns.{AmazonSNSAsync, AmazonSNSAsyncClientBuilder}
+import play.api.Logger
+
+import scala.language.postfixOps
 
 @Singleton()
-class AwsSnsClientBuilder @Inject()(configuration: SnsConfiguration) {
+class AwsSnsClientBuilder @Inject()(configuration: SnsConfiguration, builder:AmazonSNSAsyncClientBuilder) {
 
-  def credentials: AWSStaticCredentialsProvider = {
-    new AWSStaticCredentialsProvider(new AWSCredentials {
-      override def getAWSAccessKeyId: String = configuration.accessKey
-      override def getAWSSecretKey: String = configuration.secret
-    })
-  }
-
-  def endpoint: EndpointConfiguration = {
-    new EndpointConfiguration(configuration.serviceEndpoint, configuration.signingRegion)
-  }
-
-  private def getInstance(credentials:AWSCredentialsProvider, endpointConfig:EndpointConfiguration): AmazonSNSAsync = {
-    AmazonSNSAsyncClientBuilder
-      .standard
-      .withCredentials(credentials)
-      .withRegion(Regions.EU_WEST_1)
-//        .withClientConfiguration(new ClientConfiguration().withProtocol(Protocol.HTTP).withProxyHost("localhost").withProxyPort(8888))
-      .withEndpointConfiguration(endpointConfig)
-      .build()
-  }
+  import configuration._
 
   def getInstance: AmazonSNSAsync = {
-    getInstance(credentials, endpoint)
+
+    val builderWithCreds = builder.withCredentials(
+      new AWSStaticCredentialsProvider(new AWSCredentials {
+        override def getAWSAccessKeyId: String = accessKey
+        override def getAWSSecretKey: String = secret
+      }))
+
+    (region, stubbedEndpoint) match {
+      case (Some(reg), None)  =>
+        Logger.info(s"sns-client started with region[$reg]")
+        builderWithCreds.withRegion(reg).build()
+
+      case (None, Some(stub)) if stub.nonEmpty =>
+        Logger.info(s"sns-client started with stubbed endpoint[$stub]")
+        builderWithCreds withEndpointConfiguration new EndpointConfiguration(stub, "ssss") build()
+      case _ => failBuilding(region, stubbedEndpoint)
+    }
+  }
+
+  private def failBuilding(region: Option[String], stubbedEndpoint: Option[String]) = {
+
+    def fail(error:String) = throw new IllegalStateException(error)
+
+    (region, stubbedEndpoint) match {
+      case (None, None)            => fail("One of either aws.region OR a [aws.regionOverrideForStubbing] must be provided")
+      case (Some(reg), Some(stub)) => fail("Either [aws.region] or [aws.regionOverrideForStubbing] must be provided. Not both")
+      case (None, Some(stub))      => fail(s"[aws.regionOverrideForStubbing] cannot be empty if using a stubbed endpoint. Either set [aws.region] or provide a value")
+    }
   }
 }

@@ -47,7 +47,7 @@ class SnsClientScalaAdapter @Inject() (builder: AwsSnsClientBuilder) extends Aws
 
       val request = new CreatePlatformEndpointRequest()
         .withPlatformApplicationArn(platformApplicationArn)
-        .withToken(endpoint.deviceToken)
+        .withToken(endpoint.registrationToken)
 
       client.createPlatformEndpointAsync(request, handler)
     }
