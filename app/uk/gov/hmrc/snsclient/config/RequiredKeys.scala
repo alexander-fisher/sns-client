@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.aws
+package uk.gov.hmrc.snsclient.config
 
 import play.api.Configuration
-import uk.gov.hmrc.snsclient.config.RequiredKeys
 
-trait AwsConfiguration extends RequiredKeys {
+trait RequiredKeys {
 
-  def configuration:Configuration
-
-  val accessKey:       String = required("aws.accessKey", configuration)
-  val secret:          String = required("aws.secret", configuration)
-
-  val region:          Option[String] = configuration getString "aws.region"
-  val stubbedEndpoint: Option[String] = configuration getString "aws.regionOverrideForStubbing"
+  def required(key:String, config:Configuration): String = {
+    config getString key match {
+      case Some(v) if v nonEmpty => v
+      case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
+      case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
+    }
+  }
 }
-
-
-

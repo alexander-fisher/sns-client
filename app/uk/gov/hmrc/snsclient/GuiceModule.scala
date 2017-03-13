@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.snsclient
 
-import com.amazonaws.services.sns.AmazonSNSAsyncClientBuilder
-import com.google.inject.AbstractModule
+import com.amazonaws.services.sns.AmazonSNSAsync
+import com.google.inject.{AbstractModule, TypeLiteral}
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
+import com.google.inject.name.Names.named
+
+import scala.collection.immutable
 
 class GuiceModule(environment: Environment, configuration: Configuration) extends AbstractModule with ServicesConfig {
 
@@ -28,6 +31,7 @@ class GuiceModule(environment: Environment, configuration: Configuration) extend
   override protected lazy val runModeConfiguration: Configuration = configuration
 
   override def configure(): Unit = {
-    bind(classOf[AmazonSNSAsyncClientBuilder]).toInstance(AmazonSNSAsyncClientBuilder.standard())
+    bind(classOf[AmazonSNSAsync]).toProvider(classOf[AwsSnsClientProvider])
+    bind(new TypeLiteral[Map[String, String]]{}).annotatedWith(named("arnsByOs")).toProvider(classOf[PlatformArnProvider])
   }
 }

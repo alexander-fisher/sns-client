@@ -27,9 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 @Singleton
-class SnsClientScalaAdapter @Inject() (builder: AwsSnsClientBuilder) extends AwsAsyncSupport {
-
-  val client: AmazonSNSAsync = builder getInstance
+class SnsClientScalaAdapter @Inject() (client: AmazonSNSAsync) extends AwsAsyncSupport {
 
   def publish(notification: Notification)(implicit ctx:ExecutionContext): Future[PublishResult] =
     withAsyncHandler[PublishRequest, PublishResult] { handler =>
@@ -42,12 +40,12 @@ class SnsClientScalaAdapter @Inject() (builder: AwsSnsClientBuilder) extends Aws
     }
 
 
-  def createEndpoint(endpoint: Endpoint, platformApplicationArn:String)(implicit ctx:ExecutionContext): Future[CreatePlatformEndpointResult] =
+  def createEndpoint(registrationToken: String, platformApplicationArn:String)(implicit ctx:ExecutionContext): Future[CreatePlatformEndpointResult] =
     withAsyncHandler[CreatePlatformEndpointRequest, CreatePlatformEndpointResult] { handler =>
 
       val request = new CreatePlatformEndpointRequest()
         .withPlatformApplicationArn(platformApplicationArn)
-        .withToken(endpoint.registrationToken)
+        .withToken(registrationToken)
 
       client.createPlatformEndpointAsync(request, handler)
     }

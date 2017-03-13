@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import play.api.Configuration
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.support.ConfigKeys.{gcmApplicaitonArnKey, _}
+import uk.gov.hmrc.support.ConfigKeys._
 
 @RunWith(classOf[JUnitRunner])
 class SnsConfigurationSpec extends UnitSpec {
@@ -45,7 +45,6 @@ class SnsConfigurationSpec extends UnitSpec {
       config.shouldFailIfKeyIsEmpty(awsSecretKey)
     }
 
-
     val androidConfig = config ++ Map (
       gcmApiKey -> "api",
       gcmApplicaitonArnKey -> "arn",
@@ -67,8 +66,14 @@ class SnsConfigurationSpec extends UnitSpec {
       androidConfig.shouldFailIfKeyIsEmpty(gcmApiKey)
     }
 
-    "build a map of applicationArns by OS name" in {
-      new SnsConfiguration(loadConfig(androidConfig)).platformsApplicationsOsMap shouldBe Map("Android" -> "arn")
+    "build a seq of defined platforms" in {
+      val config = loadConfig(androidConfig)
+      new SnsConfiguration(config).platforms shouldBe List(
+        Some(GcmConfiguration(
+          config.getString(gcmOsKey).get,
+          config.getString(gcmApiKey).get,
+          config.getString(gcmApplicaitonArnKey).get))
+      )
     }
   }
 

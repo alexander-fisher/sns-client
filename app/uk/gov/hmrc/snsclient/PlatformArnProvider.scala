@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.aws
+package uk.gov.hmrc.snsclient
 
-import play.api.Configuration
-import uk.gov.hmrc.snsclient.config.RequiredKeys
+import javax.inject.{Inject, Singleton}
 
-trait AwsConfiguration extends RequiredKeys {
+import com.google.inject.Provider
+import uk.gov.hmrc.snsclient.aws.sns.SnsConfiguration
 
-  def configuration:Configuration
+@Singleton
+class PlatformArnProvider @Inject()(snsConfig:SnsConfiguration) extends Provider[Map[String, String]]{
 
-  val accessKey:       String = required("aws.accessKey", configuration)
-  val secret:          String = required("aws.secret", configuration)
-
-  val region:          Option[String] = configuration getString "aws.region"
-  val stubbedEndpoint: Option[String] = configuration getString "aws.regionOverrideForStubbing"
+  override def get(): Map[String, String] = {
+    snsConfig
+      .platforms
+      .flatten
+      .map(platform => platform.osName -> platform.applicationArn) toMap
+  }
 }
-
-
-

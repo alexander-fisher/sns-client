@@ -21,10 +21,9 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.junit.JUnitRunner
-import play.api.Configuration
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.snsclient.model.{CreateEndpointStatus, DeliveryStatus}
-import uk.gov.hmrc.support.{ConfigKeys, DefaultTestData, ResettingMockitoSugar}
+import uk.gov.hmrc.snsclient.model.{CreateEndpointStatus, DeliveryStatus, Endpoint}
+import uk.gov.hmrc.support.{DefaultTestData, ResettingMockitoSugar}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future._
@@ -38,6 +37,8 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
   val applicationArn = "arn:1234567890:foo"
 
   "SnsServiceSpec" should {
+
+    val defaultSnsConfiguration = Map("Android" -> "applicationArn")
 
     "return a DeliveryStatus(\"Success\") when SNS client publishes successfully" in {
 
@@ -62,14 +63,12 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
 
     "return a CreateEndpointStatus(\"Success\") when the SNS client creates the application endpoint" in {
 
-      val configuration = Configuration from defaultConfig.updated(ConfigKeys.gcmApplicaitonArnKey, applicationArn)
-
       val endpointResult = new CreatePlatformEndpointResult()
       endpointResult.setEndpointArn("endpoint-arn")
 
-      when(client.createEndpoint(androidEndpoint, applicationArn)).thenReturn(successful(endpointResult))
+      when(client.createEndpoint(androidEndpoint.registrationToken, applicationArn)).thenReturn(successful(endpointResult))
 
-      val service = new SnsService(client, new SnsConfiguration(configuration))
+      val service = new SnsService(client, Map("Android" -> applicationArn))
       val result = await(service.createEndpoint(Seq(androidEndpoint)))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.success(androidEndpoint.registrationToken, endpointResult.getEndpointArn)
@@ -77,20 +76,19 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
 
     "return a CreateEndpointStatus(\"Failed\") when the SNS client fails" in {
 
-      val configuration = Configuration from defaultConfig.updated(ConfigKeys.gcmApplicaitonArnKey, applicationArn)
-      when(client.createEndpoint(androidEndpoint, applicationArn)).thenReturn(failed(new RuntimeException("oh noes!")))
+      when(client.createEndpoint(androidEndpoint.registrationToken, applicationArn)).thenReturn(failed(new RuntimeException("oh noes!")))
 
-      val service = new SnsService(client, new SnsConfiguration(configuration))
+      val service = new SnsService(client, Map.empty[String, String])
       val result = await(service.createEndpoint(Seq(androidEndpoint)))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.failure(androidEndpoint.registrationToken, "oh noes!")
     }
 
     "return a CreateEndpointStatus(\"Failed\") when the endpoint contains an unknown OS" in {
-      val service = new SnsService(client, defaultSnsConfiguration)
-      val result = await(service.createEndpoint(Seq(androidEndpoint.copy(os = "Baidu"))))
+      val service = new SnsService(client, Map("Android" -> applicationArn))
+      val result = await(service.createEndpoint(Seq(Endpoint("Baidu", "deviceToken"))))
       result.size shouldBe 1
-      result.head shouldBe CreateEndpointStatus.failure(androidEndpoint.registrationToken, "No platform application can be found for the os[Baidu]")
+      result.head shouldBe CreateEndpointStatus.failure("deviceToken", "No platform application can be found for the os[Baidu]")
     }
   }
 }

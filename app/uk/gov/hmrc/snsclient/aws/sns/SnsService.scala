@@ -16,24 +16,21 @@
 
 package uk.gov.hmrc.snsclient.aws.sns
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 
 import com.amazonaws.services.sns.model.CreatePlatformEndpointResult
 import play.api.Logger
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
 import uk.gov.hmrc.snsclient.model._
 
+import scala.collection.immutable
 import scala.concurrent.Future._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.{implicitConversions, postfixOps}
 
 
 @Singleton
-class SnsService @Inject() (client: SnsClientScalaAdapter, configuration:SnsConfiguration) extends SnsApi with AwsAsyncSupport {
-
-  private def platformApplicationName(os:String) : Option[String] =  {
-    configuration.platformsApplicationsOsMap.get(os)
-  }
+class SnsService @Inject() (client: SnsClientScalaAdapter, @Named("arnsByOs") arnsByOs: immutable.Map[String, String]) extends SnsApi with AwsAsyncSupport {
 
   override def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext) = {
 
@@ -60,8 +57,8 @@ class SnsService @Inject() (client: SnsClientScalaAdapter, configuration:SnsConf
   private def batchCreateEndpoints(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext): Seq[(Endpoint, Future[CreatePlatformEndpointResult])] = {
     endpoints.map {
       endpoint =>
-        platformApplicationName(endpoint.os) match {
-          case Some(appName) => (endpoint, client.createEndpoint(endpoint, appName))
+        arnsByOs.get(endpoint.os) match {
+          case Some(appName) => (endpoint, client.createEndpoint(endpoint.registrationToken, appName))
           case None => (endpoint, Future failed new IllegalArgumentException(s"No platform application can be found for the os[${endpoint.os}]"))
         }
     }
