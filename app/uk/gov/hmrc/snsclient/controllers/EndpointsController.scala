@@ -26,7 +26,7 @@ import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 import uk.gov.hmrc.snsclient.model.{BatchEndpointsStatus, Endpoints}
 
 @Singleton
-class EndpointsController @Inject() (sns:SnsApi) extends BaseController with Validation {
+class EndpointsController @Inject() (sns:SnsApi) extends BaseController {
 
   val createEndpoints: Action[Endpoints] = Action.async(parse.json[Endpoints]) { implicit req =>
     sns.createEndpoint(req.body.endpoints)(defaultContext).map {

@@ -26,7 +26,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 
 @Singleton
-class NotificationController @Inject() (sns:SnsApi) extends BaseController with ErrorHandling {
+class NotificationController @Inject() (sns:SnsApi) extends BaseController {
 
   val sendNotifications: Action[Notifications] = Action.async(parse.json[Notifications]) { implicit req =>
       sns.publish(req.body.notifications)(defaultContext).map {
