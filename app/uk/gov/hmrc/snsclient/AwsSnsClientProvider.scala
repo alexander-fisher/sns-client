@@ -51,7 +51,7 @@ class AwsSnsClientProvider @Inject()(snsConfig: SnsConfiguration) extends Provid
     (snsConfig.region, snsConfig.stubbedEndpoint) match {
       case (Some(reg), None)                   => configureLiveClient(builder, reg)
       case (None, Some(stub)) if stub.nonEmpty => configureStubbedClient(builder, stub)
-      case (None, None) => fail("One of either aws.region OR a [aws.regionOverrideForStubbing] must be provided")
+      case (None, None) => fail("One of either [aws.region] OR a [aws.regionOverrideForStubbing] must be provided")
       case (Some(reg), Some(stub)) => fail("Either [aws.region] or [aws.regionOverrideForStubbing] must be provided. Not both")
       case (None, Some(stub)) => fail(s"[aws.regionOverrideForStubbing] cannot be empty if using a stubbed endpoint. Either set [aws.region] or provide a value")
     }

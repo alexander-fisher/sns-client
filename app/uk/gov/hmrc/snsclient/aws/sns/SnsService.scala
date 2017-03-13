@@ -32,7 +32,7 @@ import scala.language.{implicitConversions, postfixOps}
 @Singleton
 class SnsService @Inject() (client: SnsClientScalaAdapter, @Named("arnsByOs") arnsByOs: immutable.Map[String, String]) extends SnsApi with AwsAsyncSupport {
 
-  override def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext) = {
+  override def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext): Future[Seq[DeliveryStatus]] = {
 
     val publishRequests = notifications.map(n => (n, client.publish(n)))
 
@@ -43,7 +43,7 @@ class SnsService @Inject() (client: SnsClientScalaAdapter, @Named("arnsByOs") ar
     }
   }
 
-  override def createEndpoint(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext) = {
+  override def createEndpoint(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext): Future[Seq[CreateEndpointStatus]] = {
 
     traverse(batchCreateEndpoints(endpoints)) {
       case (request, result) => result.map(arn => CreateEndpointStatus.success(request.registrationToken, arn.getEndpointArn)) recover {
