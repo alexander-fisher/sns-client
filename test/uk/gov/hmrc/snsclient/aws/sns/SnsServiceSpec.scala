@@ -22,7 +22,8 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.junit.JUnitRunner
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.snsclient.model.{CreateEndpointStatus, DeliveryStatus, Endpoint}
+import uk.gov.hmrc.snsclient.model.NativeOS._
+import uk.gov.hmrc.snsclient.model.{CreateEndpointStatus, DeliveryStatus, Endpoint, NativeOS}
 import uk.gov.hmrc.support.{DefaultTestData, ResettingMockitoSugar}
 
 import scala.concurrent.ExecutionContext
@@ -38,7 +39,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
 
   "SnsServiceSpec" should {
 
-    val defaultSnsConfiguration = Map("Android" -> "applicationArn")
+    val defaultSnsConfiguration = Map(Android -> "applicationArn")
 
     "return a DeliveryStatus(\"Success\") when SNS client publishes successfully" in {
 
@@ -68,7 +69,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
 
       when(client.createEndpoint(androidEndpoint.registrationToken, applicationArn)).thenReturn(successful(endpointResult))
 
-      val service = new SnsService(client, Map("Android" -> applicationArn))
+      val service = new SnsService(client, Map("android" -> applicationArn))
       val result = await(service.createEndpoint(Seq(androidEndpoint)))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.success(androidEndpoint.registrationToken, endpointResult.getEndpointArn)
@@ -85,7 +86,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
     }
 
     "return a CreateEndpointStatus(\"Failed\") when the endpoint contains an unknown OS" in {
-      val service = new SnsService(client, Map("Android" -> applicationArn))
+      val service = new SnsService(client, Map(Android -> applicationArn))
       val result = await(service.createEndpoint(Seq(Endpoint("Baidu", "deviceToken"))))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.failure("deviceToken", "No platform application can be found for the os[Baidu]")

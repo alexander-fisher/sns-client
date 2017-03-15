@@ -18,21 +18,19 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import play.api.Configuration
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.support.ConfigKeys._
+import uk.gov.hmrc.snsclient.config.ConfigKeys._
+import uk.gov.hmrc.support.ConfigurationSupport
 
 @RunWith(classOf[JUnitRunner])
-class SnsConfigurationSpec extends UnitSpec {
-
-  def loadConfig(properties: Map[String, String]): Configuration = Configuration from properties
-
+class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
 
   "SnsConfiguration" should {
 
     val config = Map (
       awsAccessKey -> "v1",
-      awsSecretKey -> "v2"
+      awsSecretKey -> "v2",
+      awsStubbingKey -> false
     )
 
     s"fail to load if AWS $awsAccessKey is not set" in {
@@ -45,10 +43,15 @@ class SnsConfigurationSpec extends UnitSpec {
       config.shouldFailIfKeyIsEmpty(awsSecretKey)
     }
 
+    s"fail to load if AWS $awsStubbingKey is not set" in {
+      config.shouldFailWithoutBooleanKey(awsStubbingKey)
+    }
+
     val androidConfig = config ++ Map (
       gcmApiKey -> "api",
       gcmApplicaitonArnKey -> "arn",
-      gcmOsKey -> "Android"
+      gcmOsKey -> "android",
+      awsStubbingKey -> false
     )
 
     s"fail if $gcmOsKey is missing from the Android configuration" in {
@@ -78,12 +81,12 @@ class SnsConfigurationSpec extends UnitSpec {
   }
 
 
+  implicit def toHelper(config:Map[String, Any]): KeyHelper = new KeyHelper(config)
 
-  implicit def toHelper(config:Map[String, String]): KeyHelper = new KeyHelper(config)
-
-  class KeyHelper(config: Map[String, String]) {
+  class KeyHelper(config: Map[String, Any]) {
     def shouldFailWithoutKey(key:String)   = shouldFail(config - key)
     def shouldFailIfKeyIsEmpty(key:String) = shouldFail(config updated(key, ""))
-    private def shouldFail(properties:Map[String, String]) = intercept[IllegalArgumentException](new SnsConfiguration(loadConfig(properties)))
+    def shouldFailWithoutBooleanKey(key:String)   = shouldFail(config - key)
+    private def shouldFail(properties:Map[String, Any]) = intercept[IllegalArgumentException](new SnsConfiguration(loadConfig(properties)))
   }
 }

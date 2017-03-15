@@ -25,35 +25,38 @@ import com.google.inject.{Provider, ProvisionException}
 import play.api.Logger
 import uk.gov.hmrc.snsclient.aws.sns.SnsConfiguration
 
+import scala.language.postfixOps
+
 @Singleton
 class AwsSnsClientProvider @Inject()(snsConfig: SnsConfiguration) extends Provider[AmazonSNSAsync] {
 
+  import snsConfig._
+  import uk.gov.hmrc.snsclient.config.ConfigKeys._
+
   private def fail(error: String) = throw new ProvisionException(error)
 
-  private def configureStubbedClient(builder: AmazonSNSAsyncClientBuilder, stub: String) = {
-    Logger.info(s"sns-client started with stubbed endpoint[$stub]")
-    builder withEndpointConfiguration new EndpointConfiguration(stub, "not-used-for-stubbing") build()
-  }
-
-  private def configureLiveClient(builder: AmazonSNSAsyncClientBuilder, reg: String) = {
-    Logger.info(s"sns-client started with region[$reg]")
-    builder.withRegion(reg).build()
-  }
+  private def withNonEmptyValue[T, O](key:String, optionalValue:Option[T])(f: T => O): O =
+    optionalValue map f getOrElse fail(s"[$key] was empty")
 
   override def get(): AmazonSNSAsync = {
 
-    val builder = AmazonSNSAsyncClientBuilder.standard()
+    val builderWithCreds = AmazonSNSAsyncClientBuilder.standard()
       .withCredentials(new AWSStaticCredentialsProvider(new AWSCredentials {
         override def getAWSAccessKeyId: String = snsConfig.accessKey
         override def getAWSSecretKey: String = snsConfig.secret
       }))
 
-    (snsConfig.region, snsConfig.stubbedEndpoint) match {
-      case (Some(reg), None)                   => configureLiveClient(builder, reg)
-      case (None, Some(stub)) if stub.nonEmpty => configureStubbedClient(builder, stub)
-      case (None, None) => fail("One of either [aws.region] OR a [aws.regionOverrideForStubbing] must be provided")
-      case (Some(reg), Some(stub)) => fail("Either [aws.region] or [aws.regionOverrideForStubbing] must be provided. Not both")
-      case (None, Some(stub)) => fail(s"[aws.regionOverrideForStubbing] cannot be empty if using a stubbed endpoint. Either set [aws.region] or provide a value")
+    if (useStubbing) {
+      withNonEmptyValue(awsStubbingKey, regionOverride) { v =>
+        Logger.info(s"sns-client started with stubbed endpoint[$v]")
+        builderWithCreds withEndpointConfiguration new EndpointConfiguration(v, "not-used-for-stubbing") build()
+      }
+    }
+    else {
+      withNonEmptyValue(awsRegionKey, region) {  v =>
+        Logger.info(s"sns-client started with region[$v]")
+        builderWithCreds.withRegion(v).build()
+      }
     }
   }
 }

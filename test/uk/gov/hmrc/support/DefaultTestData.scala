@@ -25,30 +25,23 @@ import uk.gov.hmrc.snsclient.model.{Endpoint, Notification}
 
 trait DefaultTestData {
 
-  import ConfigKeys._
+  import uk.gov.hmrc.snsclient.config.ConfigKeys._
 
   def postSnsRequest(url: String) = FakeRequest("POST", url).withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
 
   val defaultConfig = Map(
-    gcmOsKey -> "Android",
+    gcmOsKey -> "android",
     gcmApiKey -> "test-apiKey",
     awsAccessKey -> "test-accessKey",
     awsSecretKey -> "test-secret",
     gcmApplicaitonArnKey -> "test-applicationArn",
-    awsRegionKey -> "eu-west-1"
+    awsRegionKey -> "eu-west-1",
+    awsRegionOverrideKey -> "stubbed-aws-sns",
+    awsStubbingKey -> true
   )
 
   val defaultSnsConfiguration = new SnsConfiguration(Configuration from defaultConfig)
   val androidNotification : Notification = androidNotification(UUID.randomUUID().toString)
-  def androidNotification(id:String) = Notification("registrationToken", "Tax is fun!", "Android", id)
+  def androidNotification(id:String) = Notification("registrationToken", "Tax is fun!", id)
   val androidEndpoint = Endpoint(defaultSnsConfiguration.gcmConfiguration.get.osName, "deviceToken")
-}
-
-object ConfigKeys {
-  val gcmOsKey = "aws.platform.gcm.osName"
-  val gcmApiKey = "aws.platform.gcm.apiKey"
-  val gcmApplicaitonArnKey = "aws.platform.gcm.applicationArn"
-  val awsAccessKey = "aws.accessKey"
-  val awsSecretKey = "aws.secret"
-  val awsRegionKey = "aws.region"
 }

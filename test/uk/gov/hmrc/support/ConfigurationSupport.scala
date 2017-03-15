@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.snsclient.config
+package uk.gov.hmrc.support
 
 import play.api.Configuration
 
-trait RequiredKeys {
+trait ConfigurationSupport {
 
-  def requiredString(key:String, config:Configuration): String = {
-    config getString key match {
-      case Some(v) if v nonEmpty => v
-      case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
-      case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
-    }
-  }
+  def loadConfig(properties: Map[String, Any]): Configuration = Configuration from properties
 
-  def requiredBoolean(key:String, config:Configuration): Boolean = {
-    config getBoolean key getOrElse(throw new IllegalArgumentException(s"property at [$key] was missing"))
-  }
 }

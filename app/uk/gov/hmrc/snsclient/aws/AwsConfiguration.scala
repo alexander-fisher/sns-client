@@ -19,16 +19,20 @@ package uk.gov.hmrc.snsclient.aws
 import play.api.Configuration
 import uk.gov.hmrc.snsclient.config.RequiredKeys
 
+import uk.gov.hmrc.snsclient.config.ConfigKeys._
+
 trait AwsConfiguration extends RequiredKeys {
 
   def configuration:Configuration
 
-  val accessKey:       String = required("aws.accessKey", configuration)
-  val secret:          String = required("aws.secret", configuration)
+  val accessKey:    String = requiredString(awsAccessKey, configuration)
+  val secret:       String = requiredString(awsSecretKey, configuration)
+  val useStubbing:  Boolean = requiredBoolean(awsStubbingKey, configuration)
 
-  val region:          Option[String] = configuration getString "aws.region"
-  val stubbedEndpoint: Option[String] = configuration getString "aws.regionOverrideForStubbing"
+  val region:          Option[String] = configuration getString awsRegionKey
+  val regionOverride:  Option[String] = configuration getString awsRegionOverrideKey
 }
+
 
 
 

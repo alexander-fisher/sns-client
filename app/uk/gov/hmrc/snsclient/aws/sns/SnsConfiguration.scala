@@ -24,22 +24,24 @@ import uk.gov.hmrc.snsclient.config.RequiredKeys
 
 import scala.language.postfixOps
 
+import uk.gov.hmrc.snsclient.config.ConfigKeys._
 
 @Singleton
 class SnsConfiguration @Inject()(val configuration: Configuration) extends AwsConfiguration {
 
-  private val AndroidConfig = "aws.platform.gcm"
-  val gcmConfiguration: Option[GcmConfiguration] = configuration getConfig AndroidConfig map (GcmConfiguration apply)
+  val gcmConfiguration: Option[GcmConfiguration] = GcmConfiguration from configuration
   val platforms: Seq[Option[GcmConfiguration]] = Seq(gcmConfiguration)
 }
-
 
 case class GcmConfiguration(osName: String, apiKey: String, applicationArn: String)
 
 object GcmConfiguration extends RequiredKeys {
-  def apply(gcmConfig: Configuration): GcmConfiguration = GcmConfiguration(
-    required("osName", gcmConfig),
-    required("apiKey", gcmConfig),
-    required("applicationArn", gcmConfig)
-  )
+  def from(gcmConfig: Configuration): Option[GcmConfiguration] =
+    gcmConfig.getConfig(androidConfigurationKey).map( _ =>
+      GcmConfiguration(
+        requiredString(gcmOsKey, gcmConfig),
+        requiredString(gcmApiKey, gcmConfig),
+        requiredString(gcmApplicaitonArnKey, gcmConfig)
+      )
+    )
 }

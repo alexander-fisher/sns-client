@@ -16,19 +16,14 @@
 
 package uk.gov.hmrc.snsclient.config
 
-import play.api.Configuration
-
-trait RequiredKeys {
-
-  def requiredString(key:String, config:Configuration): String = {
-    config getString key match {
-      case Some(v) if v nonEmpty => v
-      case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
-      case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
-    }
-  }
-
-  def requiredBoolean(key:String, config:Configuration): Boolean = {
-    config getBoolean key getOrElse(throw new IllegalArgumentException(s"property at [$key] was missing"))
-  }
+object ConfigKeys {
+  val androidConfigurationKey = "aws.platform.gcm"
+  val gcmOsKey = "aws.platform.gcm.osName"
+  val gcmApiKey = "aws.platform.gcm.apiKey"
+  val gcmApplicaitonArnKey = "aws.platform.gcm.applicationArn"
+  val awsAccessKey = "aws.accessKey"
+  val awsSecretKey = "aws.secret"
+  val awsRegionKey = "aws.region"
+  val awsStubbingKey = "aws.stubbing"
+  val awsRegionOverrideKey = "aws.regionOverrideForStubbing"
 }
