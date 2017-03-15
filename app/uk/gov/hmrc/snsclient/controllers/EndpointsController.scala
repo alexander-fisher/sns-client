@@ -18,21 +18,28 @@ package uk.gov.hmrc.snsclient.controllers
 
 import javax.inject.{Inject, Singleton}
 
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 import uk.gov.hmrc.snsclient.model.{BatchEndpointsStatus, Endpoints}
+import uk.gov.hmrc.snsclient.model.JsonFormats._
 
 @Singleton
 class EndpointsController @Inject() (sns:SnsApi) extends BaseController {
+
 
   val createEndpoints: Action[Endpoints] = Action.async(parse.json[Endpoints]) { implicit req =>
     sns.createEndpoint(req.body.endpoints)(defaultContext).map {
       deliveryStatuses => Ok(Json.toJson(BatchEndpointsStatus(deliveryStatuses)))
     } recover {
-      case e => BadRequest
+      case e =>
+        Logger.warn(s"Creation of endpoints failed because ${e.printStackTrace()}")
+        BadRequest
     }
   }
+
+
 }

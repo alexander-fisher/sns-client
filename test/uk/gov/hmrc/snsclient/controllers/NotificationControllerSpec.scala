@@ -25,7 +25,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 import uk.gov.hmrc.snsclient.model.{BatchDeliveryStatus, DeliveryStatus, Notification, Notifications}
 import uk.gov.hmrc.support.{ControllerSpec, DefaultTestData}
-
+import uk.gov.hmrc.snsclient.model.JsonFormats._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future._
 

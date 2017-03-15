@@ -15,103 +15,37 @@
  */
 
 package uk.gov.hmrc.snsclient.model
-
-import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json.{OFormat, _}
-
-import scala.collection.Map
 import scala.language.postfixOps
 
-case class Notification(endpointArn: String, message: String, id: String)
+case class Endpoint(os: String, registrationToken: String)
+case class Endpoints(endpoints: Seq[Endpoint])
+case class CreateEndpointStatus(id: String, endpointArn: Option[String] = None)
+case class BatchEndpointsStatus(deliveryStatuses: Map[String, Option[String]])
 
+object BatchEndpointsStatus {
+  def apply(statuses:Seq[CreateEndpointStatus]) : BatchEndpointsStatus = {
+    BatchEndpointsStatus(statuses map(p => p.id-> p.endpointArn) toMap)
+  }
+}
 
-object Notification {
-  implicit val format: OFormat[Notification] = Json.format[Notification]
+object CreateEndpointStatus {
+  def success(id: String, endpointArn: String) = CreateEndpointStatus(id: String, Some(endpointArn))
+  def failure(id: String, message: String = "") = CreateEndpointStatus(id: String, None)
 }
 
 case class Notifications(notifications: Seq[Notification])
-object Notifications {
-  implicit val format: OFormat[Notifications] = Json.format[Notifications]
-}
-
+case class Notification(endpointArn: String, message: String, id: String)
+case class DeliveryStatus(id: String, status: String, error: Option[String])
 case class BatchDeliveryStatus(deliveryStatuses: Map[String, String])
+
 object BatchDeliveryStatus {
-
-  def apply(statuses: Seq[DeliveryStatus]): BatchDeliveryStatus = {
-    BatchDeliveryStatus(statuses.map(p => p.notificationId -> p.status) toMap)
+  def apply(statuses:Seq[DeliveryStatus]) : BatchDeliveryStatus = {
+    BatchDeliveryStatus(statuses map(p => p.id -> p.status) toMap)
   }
-
-  implicit val format: OFormat[BatchDeliveryStatus] = Json.format[BatchDeliveryStatus]
 }
 
-case class DeliveryStatus(notificationId: String, status: String, error: Option[String])
 object DeliveryStatus {
-
   def success(notificationId: String) = DeliveryStatus(notificationId: String, "Success", None)
-  def failure(notificationId: String, message: String = "") = DeliveryStatus(notificationId: String, "Failed", Some(message))
-  def disabled(notificationId: String, message: String = "") = DeliveryStatus(notificationId: String, "Disabled", None)
-
-  implicit val format: OFormat[DeliveryStatus] = Json.format[DeliveryStatus]
+  def failure(id: String, message: String = "") = DeliveryStatus(id: String, "Failed", Some(message))
+  def disabled(id: String, message: String = "") = DeliveryStatus(id: String, "Disabled", None)
 }
-
-
-case class Endpoints(endpoints: Seq[Endpoint])
-object Endpoints {
-  implicit val format: OFormat[Endpoints] = Json.format[Endpoints]
-}
-
-
-case class BatchEndpointsStatus(deliveryStatuses: Map[String, Option[String]])
-object BatchEndpointsStatus {
-
-  def apply(statuses: Seq[CreateEndpointStatus]): BatchEndpointsStatus = {
-    BatchEndpointsStatus(statuses.map(p => p.id -> p.endpointArn) toMap)
-  }
-
-  implicit val mapWrites: OWrites[Map[String, Option[String]]] = play.api.libs.json.Writes.mapWrites[Option[String]]
-  implicit val mapReads: OReads[Map[String, Option[String]]] = play.api.libs.json.Writes.mapWrites[Option[String]]
-
-  implicit val format: OFormat[BatchEndpointsStatus] =
-    Json.format[BatchEndpointsStatus]
-
-
-  implicit object OptionStringWrites extends OFormat[Option[String]] {
-    def reads(json: JsValue) = json match {
-      case JsString(s) => JsSuccess(Option(s))
-      case JsNull => JsSuccess(None)
-      case _ => JsError("expected Option[String]")
-    }
-
-    override def writes(o: Option[String]): JsValue = o match {
-      case Some(v) => JsString(v)
-      case None => JsNull
-    }
-  }
-}
-
-case class CreateEndpointStatus(id: String, endpointArn: Option[String] = None)
-object CreateEndpointStatus {
-
-  def success(notificationId:String, endpointArn:String) = CreateEndpointStatus(notificationId:String, Some(endpointArn))
-  def failure(notificationId:String, message:String = "") = CreateEndpointStatus(notificationId:String, None)
-
-  implicit val format: OFormat[CreateEndpointStatus] = Json.format[CreateEndpointStatus]
-}
-
-case class Endpoint(os: String, registrationToken: String)
-object Endpoint {
-  implicit val format: OFormat[Endpoint] = Json.format[Endpoint]
-}
-
-
-
-//  implicit object MapFormat extends OFormat[Map[String, Option[String]]] {
-//    override def writes(m: Map[String, Option[String]]): JsObject = play.api.libs.json.Writes.mapWrites[Option[String]]
-//    override def writes(m: Map[String, Option[String]]): JsObject = {
-//      Json.obj(m.map {
-//        case (k, Some(v)) => (k, JsString(v).asInstanceOf[JsValueWrapper])
-//        case (k, None) => (k, JsNull.asInstanceOf[JsValueWrapper])
-//      } toSeq :_*)
-//    }
-
-

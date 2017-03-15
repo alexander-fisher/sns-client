@@ -19,13 +19,14 @@ package uk.gov.hmrc.snsclient.controllers
 import org.junit.runner.RunWith
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import org.mockito.Matchers.{eq => eqs}
 import org.scalatest.junit.JUnitRunner
 import play.api.libs.json.Json._
 import play.api.test.Helpers._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 import uk.gov.hmrc.snsclient.model._
 import uk.gov.hmrc.support.{ControllerSpec, DefaultTestData}
-
+import uk.gov.hmrc.snsclient.model.JsonFormats._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future._
 
@@ -43,11 +44,9 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
     "return 200 with Some(EndpointArn) if the Endpoint is returned by SNS" in {
 
-      when(sns.createEndpoint(any[Seq[Endpoint]])(any[ExecutionContext])).thenReturn(successful(Seq(statusSuccessful)))
+      when(sns.createEndpoint(eqs(Seq(androidEndpoint)))(any[ExecutionContext])).thenReturn(successful(Seq(statusSuccessful)))
 
-      println(toJson(Endpoints(Seq(androidEndpoint))))
-
-      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(statusSuccessful)))
