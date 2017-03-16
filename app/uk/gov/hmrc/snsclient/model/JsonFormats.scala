@@ -35,14 +35,14 @@ object JsonFormats {
     }
   }
 
-  def toOptionTuple(kv: (String,JsValue)) : (String, Option[String]) =
+  private def toOptionTuple(kv: (String,JsValue)) : (String, Option[String]) =
     (kv._1, kv._2) match {
       case (k, JsString(v)) => k -> Some(v)
       case (k, JsNull)      => k -> None
       case (k,v) => throw new RuntimeException(s"Failed to read [$k -> $v] as String -> Option[String]")
   }
 
-  
+
   implicit val mapOptionFormat = Format(mapReads, mapWrites)
   implicit val endpointFormat = Json.format[Endpoint]
   implicit val endpointsFormat = Json.format[Endpoints]

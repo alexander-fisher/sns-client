@@ -24,10 +24,12 @@ import org.scalatest.junit.JUnitRunner
 import play.api.libs.json.Json._
 import play.api.test.Helpers._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
+import uk.gov.hmrc.snsclient.metrics.Metrics
 import uk.gov.hmrc.snsclient.model._
 import uk.gov.hmrc.support.{ControllerSpec, DefaultTestData}
 import uk.gov.hmrc.snsclient.model.JsonFormats._
-import scala.concurrent.ExecutionContext
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future._
 
 
@@ -35,7 +37,8 @@ import scala.concurrent.Future._
 class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
   private val sns         = resettingMock[SnsApi]
-  private val controller  = new EndpointsController(sns)
+  private val metrics     = resettingMock[Metrics]
+  private val controller  = new EndpointsController(sns, metrics)
   private val url         = routes.EndpointsController.createEndpoints().url
 
   s"POST" should {
@@ -50,6 +53,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus)))
+      verify(metrics, times(1)).endpointCreationSuccess()
     }
 
     "return 200 with when more than 1 endpoint ARN is created by SNS" in {
@@ -64,6 +68,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus, endpointStatus)))
+      verify(metrics, times(1)).endpointCreationSuccess()
     }
 
     "return 200 with the None if the Endpoint if SNS cannot create the Endpoint" in {
@@ -74,6 +79,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus)))
+      verify(metrics, times(1)).endpointCreationSuccess()
     }
 
 
@@ -89,6 +95,21 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus, endpointStatus)))
+      verify(metrics, times(1)).endpointCreationSuccess()
+      verifyNoMoreInteractions(metrics)
+    }
+
+    "return 400 when the batch fails" in {
+
+      when(sns.createEndpoints(any[Seq[Endpoint]])(any[ExecutionContext]))
+        .thenReturn(Future failed new RuntimeException("Something nasty occurred processing these futures"))
+
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
+
+      status(result) mustEqual BAD_REQUEST
+      contentAsJson(result) mustEqual toJson(Map("error" -> "Batch creation of endpoints failed: [Something nasty occurred processing these futures]"))
+      verify(metrics, times(1)).batchEndpointCreationFailure()
+      verifyNoMoreInteractions(metrics)
     }
   }
 }

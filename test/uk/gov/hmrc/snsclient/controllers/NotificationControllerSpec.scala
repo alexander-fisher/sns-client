@@ -23,10 +23,12 @@ import org.scalatest.junit.JUnitRunner
 import play.api.libs.json.Json._
 import play.api.test.Helpers._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
-import uk.gov.hmrc.snsclient.model.{BatchDeliveryStatus, DeliveryStatus, Notification, Notifications}
+import uk.gov.hmrc.snsclient.metrics.Metrics
+import uk.gov.hmrc.snsclient.model._
 import uk.gov.hmrc.support.{ControllerSpec, DefaultTestData}
 import uk.gov.hmrc.snsclient.model.JsonFormats._
-import scala.concurrent.ExecutionContext
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future._
 
 
@@ -34,7 +36,8 @@ import scala.concurrent.Future._
 class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
   private val sns = resettingMock[SnsApi]
-  private val controller   = new NotificationController(sns)
+  private val metrics = resettingMock[Metrics]
+  private val controller   = new NotificationController(sns, metrics)
 
   private val notificationsUrl: String = routes.NotificationController.sendNotifications().url
 
@@ -53,6 +56,8 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+      verify(metrics, times(1)).batchPublicationSuccess()
+      verifyNoMoreInteractions(metrics)
     }
 
 
@@ -68,6 +73,8 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+      verify(metrics, times(1)).batchPublicationSuccess()
+      verifyNoMoreInteractions(metrics)
     }
 
 
@@ -83,6 +90,23 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       status(result) mustEqual OK
       contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+      verify(metrics, times(1)).batchPublicationSuccess()
+      verifyNoMoreInteractions(metrics)
+    }
+
+    "return 400 when the batch fails" in {
+
+      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
+        .thenReturn(Future failed new RuntimeException("Something nasty occurred processing these futures"))
+
+      val request = toJson(Notifications(Seq(androidNotification, androidNotification)))
+
+      val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
+
+      status(result) mustEqual BAD_REQUEST
+      contentAsJson(result) mustEqual toJson(Map("error" -> "Batch notification publication failed: [Something nasty occurred processing these futures]"))
+      verify(metrics, times(1)).batchPublicationFailure()
+      verifyNoMoreInteractions(metrics)
     }
   }
 }

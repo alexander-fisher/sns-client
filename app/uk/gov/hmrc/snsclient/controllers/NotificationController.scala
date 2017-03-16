@@ -18,29 +18,31 @@ package uk.gov.hmrc.snsclient.controllers
 
 import javax.inject.{Inject, Singleton}
 
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
+import uk.gov.hmrc.snsclient.metrics.Metrics
 import uk.gov.hmrc.snsclient.model.JsonFormats._
 import uk.gov.hmrc.snsclient.model._
 
 @Singleton
-class NotificationController @Inject() (sns:SnsApi) extends BaseController {
-
-  private def toBatchDeliveryStatus(statuses: Seq[DeliveryStatus]) = {
-    BatchDeliveryStatus(statuses.map(s => s.id -> s.status) toMap)
-  }
+class NotificationController @Inject()(sns: SnsApi, metrics: Metrics) extends BaseController {
 
   val sendNotifications: Action[Notifications] = Action.async(parse.json[Notifications]) { implicit req =>
-      sns.publish(req.body.notifications)(defaultContext).map {
-        deliveryStatuses => Ok(Json.toJson(toBatchDeliveryStatus(deliveryStatuses)))
-      } recover {
-        case e => BadRequest
-      }
+    sns.publish(req.body.notifications)(defaultContext).map {
+      statuses =>
+        metrics.batchPublicationSuccess()
+        Ok(Json.toJson(BatchDeliveryStatus(statuses)))
+    } recover {
+      case e =>
+        Logger.warn(s"Batch creation of endpoints failed ${e.getStackTrace.mkString("\n")}")
+        metrics.batchPublicationFailure()
+        BadRequest(Json.toJson(Map("error" -> s"Batch notification publication failed: [${e.getMessage}]")))
+    }
   }
-
 }
 
 

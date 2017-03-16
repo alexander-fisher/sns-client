@@ -15,6 +15,7 @@ object MicroServiceBuild extends Build with MicroService {
   private val playHealth = "2.0.0"
   private val awsSns = "1.11.97"
   private val playHmrcApiVersion = "1.3.0"
+  private val graphiteMetrics = "3.1.0"
 
 
   val compile = Seq(
@@ -25,7 +26,8 @@ object MicroServiceBuild extends Build with MicroService {
     "uk.gov.hmrc" %% "play-url-binders" % playBinders,
     "uk.gov.hmrc" %% "play-config" % playConfig,
     "uk.gov.hmrc" %% "logback-json-logger" % logback,
-    "com.amazonaws" % "aws-java-sdk-sns" % awsSns
+    "com.amazonaws" % "aws-java-sdk-sns" % awsSns,
+    "uk.gov.hmrc" %% "play-graphite" % graphiteMetrics
   )
 
   private val scalaTestPlus = "1.5.1"

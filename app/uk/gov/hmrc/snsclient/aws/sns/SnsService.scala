@@ -21,6 +21,7 @@ import javax.inject.{Inject, Named, Singleton}
 import com.amazonaws.services.sns.model.CreatePlatformEndpointResult
 import play.api.Logger
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
+import uk.gov.hmrc.snsclient.metrics.Metrics
 import uk.gov.hmrc.snsclient.model._
 
 import scala.collection.immutable
@@ -30,36 +31,50 @@ import scala.language.{implicitConversions, postfixOps}
 
 
 @Singleton
-class SnsService @Inject() (client: SnsClientScalaAdapter, @Named("arnsByOs") arnsByOs: immutable.Map[String, String]) extends SnsApi with AwsAsyncSupport {
+class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arnsByOs: immutable.Map[String, String], metrics: Metrics) extends SnsApi with AwsAsyncSupport {
 
-  override def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext): Future[Seq[DeliveryStatus]] = {
+  override def publish(notifications: Seq[Notification])(implicit ctx: ExecutionContext): Future[Seq[DeliveryStatus]] = {
 
     val publishRequests = notifications.map(n => (n, client.publish(n)))
 
     traverse(publishRequests) {
-      case (request, result) => result.map(_ => DeliveryStatus.success(request.id)) recover {
-        case ex => DeliveryStatus.failure(request.id, ex.getMessage)
+      case (request, result) => result.map {
+        _ =>
+          metrics.publishSuccess()
+          DeliveryStatus.success(request.id)
+      } recover {
+        case ex =>
+          metrics.publishFailure()
+          DeliveryStatus.failure(request.id, ex.getMessage)
       }
+
     }
   }
 
-  override def createEndpoints(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext): Future[Seq[CreateEndpointStatus]] = {
+  override def createEndpoints(endpoints: Seq[Endpoint])(implicit ctx: ExecutionContext): Future[Seq[CreateEndpointStatus]] = {
 
     traverse(batchCreateEndpoints(endpoints)) {
-      case (request, result) => result.map(arn => CreateEndpointStatus.success(request.registrationToken, arn.getEndpointArn)) recover {
-        case ex =>
-          Logger.warn("SNS Application Endpoint creation failed", ex)
-          CreateEndpointStatus.failure(request.registrationToken)
-      }
+      case (request, result) =>
+        result.map { arn =>
+          metrics.endpointCreationSuccess()
+          CreateEndpointStatus.success(request.registrationToken, arn.getEndpointArn)
+        } recover {
+          case ex =>
+            Logger.warn("SNS Application Endpoint creation failed", ex)
+            metrics.endpointCreationFailure()
+            CreateEndpointStatus.failure(request.registrationToken)
+        }
     }
   }
 
-  private def batchCreateEndpoints(endpoints: Seq[Endpoint])(implicit ctx:ExecutionContext): Seq[(Endpoint, Future[CreatePlatformEndpointResult])] = {
+  private def batchCreateEndpoints(endpoints: Seq[Endpoint])(implicit ctx: ExecutionContext): Seq[(Endpoint, Future[CreatePlatformEndpointResult])] = {
     endpoints.map {
       endpoint =>
         arnsByOs.get(endpoint.os) match {
           case Some(appName) => (endpoint, client.createEndpoint(endpoint.registrationToken, appName))
-          case None => (endpoint, Future failed new IllegalArgumentException(s"No platform application can be found for the os[${endpoint.os}]"))
+          case None =>
+            metrics.unknownOsFailure()
+            (endpoint, Future failed new IllegalArgumentException(s"No platform application can be found for the os[${endpoint.os}]"))
         }
     }
   }
