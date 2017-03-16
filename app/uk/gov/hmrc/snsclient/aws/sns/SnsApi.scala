@@ -26,5 +26,5 @@ trait SnsApi {
 
   def publish(notifications: Seq[Notification])(implicit ctx:ExecutionContext): Future[Seq[DeliveryStatus]]
 
-  def createEndpoint(endpoints:Seq[Endpoint])(implicit ctx:ExecutionContext): Future[Seq[CreateEndpointStatus]]
+  def createEndpoints(endpoints:Seq[Endpoint])(implicit ctx:ExecutionContext): Future[Seq[CreateEndpointStatus]]
 }

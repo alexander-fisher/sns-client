@@ -39,12 +39,10 @@ object JsonFormats {
     (kv._1, kv._2) match {
       case (k, JsString(v)) => k -> Some(v)
       case (k, JsNull)      => k -> None
-      case (k,v) => throw new BadJuJUException(s"Failed to read [$k -> $v] as String -> Option[String]")
+      case (k,v) => throw new RuntimeException(s"Failed to read [$k -> $v] as String -> Option[String]")
   }
 
-  class BadJuJUException(e:String) extends RuntimeException(e)
-
-
+  
   implicit val mapOptionFormat = Format(mapReads, mapWrites)
   implicit val endpointFormat = Json.format[Endpoint]
   implicit val endpointsFormat = Json.format[Endpoints]

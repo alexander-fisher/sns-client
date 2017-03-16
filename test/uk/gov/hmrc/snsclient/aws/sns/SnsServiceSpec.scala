@@ -70,7 +70,7 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
       when(client.createEndpoint(androidEndpoint.registrationToken, applicationArn)).thenReturn(successful(endpointResult))
 
       val service = new SnsService(client, Map("android" -> applicationArn))
-      val result = await(service.createEndpoint(Seq(androidEndpoint)))
+      val result = await(service.createEndpoints(Seq(androidEndpoint)))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.success(androidEndpoint.registrationToken, endpointResult.getEndpointArn)
     }
@@ -80,14 +80,14 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
       when(client.createEndpoint(androidEndpoint.registrationToken, applicationArn)).thenReturn(failed(new RuntimeException("oh noes!")))
 
       val service = new SnsService(client, Map.empty[String, String])
-      val result = await(service.createEndpoint(Seq(androidEndpoint)))
+      val result = await(service.createEndpoints(Seq(androidEndpoint)))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.failure(androidEndpoint.registrationToken, "oh noes!")
     }
 
     "return a CreateEndpointStatus(\"Failed\") when the endpoint contains an unknown OS" in {
       val service = new SnsService(client, Map(Android -> applicationArn))
-      val result = await(service.createEndpoint(Seq(Endpoint("Baidu", "deviceToken"))))
+      val result = await(service.createEndpoints(Seq(Endpoint("Baidu", "deviceToken"))))
       result.size shouldBe 1
       result.head shouldBe CreateEndpointStatus.failure("deviceToken", "No platform application can be found for the os[Baidu]")
     }

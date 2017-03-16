@@ -43,5 +43,5 @@ trait DefaultTestData {
   val defaultSnsConfiguration = new SnsConfiguration(Configuration from defaultConfig)
   val androidNotification : Notification = androidNotification(UUID.randomUUID().toString)
   def androidNotification(id:String) = Notification("registrationToken", "Tax is fun!", id)
-  val androidEndpoint = Endpoint(defaultSnsConfiguration.gcmConfiguration.get.osName, "deviceToken")
+  val androidEndpoint = Endpoint(defaultSnsConfiguration.gcmConfiguration.get.osName, "android-registration-token")
 }

@@ -40,26 +40,55 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
   s"POST" should {
 
-    val statusSuccessful = CreateEndpointStatus.success(androidNotification.id, "endpointArn")
+    val androidEndpointStatus = CreateEndpointStatus.success(androidEndpoint.registrationToken, "endpointArn")
 
     "return 200 with Some(EndpointArn) if the Endpoint is returned by SNS" in {
 
-      when(sns.createEndpoint(eqs(Seq(androidEndpoint)))(any[ExecutionContext])).thenReturn(successful(Seq(statusSuccessful)))
+      when(sns.createEndpoints(eqs(Seq(androidEndpoint)))(any[ExecutionContext])).thenReturn(successful(Seq(androidEndpointStatus)))
 
       val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(statusSuccessful)))
+      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus)))
+    }
+
+    "return 200 with when more than 1 endpoint ARN is created by SNS" in {
+
+      val endpoint = androidEndpoint.copy(registrationToken = "registration-token")
+      val endpointStatus = CreateEndpointStatus.success(endpoint.registrationToken, "endpointArn")
+
+      when(sns.createEndpoints(eqs(Seq(androidEndpoint, endpoint)))(any[ExecutionContext]))
+        .thenReturn(successful(Seq(androidEndpointStatus, endpointStatus)))
+
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint, endpoint)))))
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus, endpointStatus)))
     }
 
     "return 200 with the None if the Endpoint if SNS cannot create the Endpoint" in {
 
-      when(sns.createEndpoint(any[Seq[Endpoint]])(any[ExecutionContext])).thenReturn(successful(Seq(statusSuccessful)))
+      when(sns.createEndpoints(any[Seq[Endpoint]])(any[ExecutionContext])).thenReturn(successful(Seq(androidEndpointStatus)))
 
       val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(statusSuccessful)))
+      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus)))
+    }
+
+
+    "return 200 when 1 of 2 endpoint ARNs are created by SNS" in {
+
+      val endpoint = androidEndpoint.copy(registrationToken = "registration-token")
+      val endpointStatus = CreateEndpointStatus.failure(endpoint.registrationToken, "Something went horribly wrong")
+
+      when(sns.createEndpoints(eqs(Seq(androidEndpoint, endpoint)))(any[ExecutionContext]))
+        .thenReturn(successful(Seq(androidEndpointStatus, endpointStatus)))
+
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint, endpoint)))))
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus, endpointStatus)))
     }
   }
 }

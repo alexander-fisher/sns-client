@@ -32,7 +32,7 @@ class EndpointsController @Inject() (sns:SnsApi) extends BaseController {
 
 
   val createEndpoints: Action[Endpoints] = Action.async(parse.json[Endpoints]) { implicit req =>
-    sns.createEndpoint(req.body.endpoints)(defaultContext).map {
+    sns.createEndpoints(req.body.endpoints)(defaultContext).map {
       deliveryStatuses => Ok(Json.toJson(BatchEndpointsStatus(deliveryStatuses)))
     } recover {
       case e =>
