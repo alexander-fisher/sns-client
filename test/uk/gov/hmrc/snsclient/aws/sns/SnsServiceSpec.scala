@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.snsclient.aws.sns
 
-import com.amazonaws.services.sns.model.{CreatePlatformEndpointResult, PublishResult}
+import com.amazonaws.services.sns.model.{CreatePlatformEndpointResult, EndpointDisabledException, PublishResult}
 import org.junit.runner.RunWith
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
@@ -68,6 +68,18 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
       result.size shouldBe 1
       result.head shouldBe DeliveryStatus.failure(androidNotification.id, "oh noes!")
       verify(metrics, times(1)).publishFailure()
+      verifyNoMoreInteractions(metrics)
+    }
+
+    "return a DeliveryStatus(\"Disabled\") when the endpointARN has been diabled" in {
+
+      when(client.publish(androidNotification)).thenReturn(failed(new EndpointDisabledException("Endpoint is disabled")))
+
+      val service = newService(defaultSnsPropertyMap)
+      val result = await(service.publish(Seq(androidNotification)))
+      result.size shouldBe 1
+      result.head shouldBe DeliveryStatus.disabled(androidNotification.id, "oh noes!")
+      verify(metrics, times(1)).endpointDisabledFailure()
       verifyNoMoreInteractions(metrics)
     }
 

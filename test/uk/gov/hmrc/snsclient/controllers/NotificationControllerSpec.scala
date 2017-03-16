@@ -94,6 +94,27 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
       verifyNoMoreInteractions(metrics)
     }
 
+
+    "return 200 and DISABLED when the endpointArn has been disabled" in {
+
+      val disabledResponse = Seq(DeliveryStatus.disabled(androidNotification.id))
+
+      when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
+        .thenReturn(successful(disabledResponse))
+
+      val result = call(
+        controller.sendNotifications,
+        postSnsRequest(notificationsUrl)
+          .withJsonBody(toJson(Notifications(Seq(androidNotification))))
+      )
+
+      status(result) mustEqual OK
+      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(disabledResponse))
+
+      verify(metrics, times(1)).batchPublicationSuccess()
+      verifyNoMoreInteractions(metrics)
+    }
+
     "return 400 when the batch fails" in {
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))

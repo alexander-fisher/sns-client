@@ -37,7 +37,7 @@ class EndpointsController @Inject() (sns:SnsApi, metrics:Metrics) extends BaseCo
       Ok(Json.toJson(BatchEndpointsStatus(statuses)))
     } recover {
       case e =>
-        Logger.warn(s"Batch creation of endpoints failed ${e.getMessage}")
+        Logger.error(s"Batch creation of endpoints failed ${e.getMessage}")
         metrics.batchEndpointCreationFailure()
         BadRequest(Json.toJson(Map("error" -> s"Batch creation of endpoints failed: [${e.getMessage}]")))
     }

@@ -90,6 +90,8 @@ The response is a Map[String, Option[String]], where the key is the registration
     }
 ##### Response
 
+Statuses are `Success`, `Failed` and `Disabled`
+
     {
       "deliveryStatuses": {
         "12334": "Success",

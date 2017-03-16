@@ -35,6 +35,7 @@ trait MetricsApi {
 
   def batchPublicationSuccess()
   def batchPublicationFailure()
+  def endpointDisabledFailure()
   def publishSuccess()
   def publishFailure()
 }
@@ -54,6 +55,7 @@ class Metrics extends MetricsApi with MicroserviceMetrics {
 
   override def publishSuccess(): Unit = registry.meter(s"$successful.publish").mark(1L)
   override def publishFailure(): Unit = registry.meter(s"$failed.publish").mark(1L)
+  override def endpointDisabledFailure(): Unit = registry.meter(s"$failed.publish").mark(1L)
   override def batchPublicationSuccess(): Unit = registry.meter(s"$successful.batch-publish").mark(1L)
   override def batchPublicationFailure(): Unit = registry.meter(s"$failed.batch-publish").mark(1L)
 }

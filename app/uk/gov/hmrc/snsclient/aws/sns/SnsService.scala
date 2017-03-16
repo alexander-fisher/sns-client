@@ -18,7 +18,7 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import javax.inject.{Inject, Named, Singleton}
 
-import com.amazonaws.services.sns.model.CreatePlatformEndpointResult
+import com.amazonaws.services.sns.model.{CreatePlatformEndpointResult, EndpointDisabledException}
 import play.api.Logger
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
 import uk.gov.hmrc.snsclient.metrics.Metrics
@@ -43,7 +43,12 @@ class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arn
           metrics.publishSuccess()
           DeliveryStatus.success(request.id)
       } recover {
+        case ex: EndpointDisabledException =>
+          Logger.error(s"Publish request [${request.id}] failed because [${ex.getMessage}]")
+          metrics.endpointDisabledFailure()
+          DeliveryStatus.disabled(request.id, ex.getMessage)
         case ex =>
+          Logger.error(s"Publish request [${request.id}] failed because [${ex.getMessage}]")
           metrics.publishFailure()
           DeliveryStatus.failure(request.id, ex.getMessage)
       }
@@ -59,7 +64,7 @@ class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arn
           CreateEndpointStatus.success(request.registrationToken, arn.getEndpointArn)
         } recover {
           case ex =>
-            Logger.warn("SNS Application Endpoint creation failed", ex)
+            Logger.error("Endpoint creation failed", ex)
             metrics.endpointCreationFailure()
             CreateEndpointStatus.failure(request.registrationToken)
         }
@@ -72,6 +77,7 @@ class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arn
         arnsByOs.get(endpoint.os) match {
           case Some(appName) => (endpoint, client.createEndpoint(endpoint.registrationToken, appName))
           case None =>
+            Logger.error(s"Endpoint creation failed because the Native OS ${endpoint.os} is not configured to a PlatformApplication")
             metrics.unknownOsFailure()
             (endpoint, Future failed new IllegalArgumentException(s"No platform application can be found for the os[${endpoint.os}]"))
         }
