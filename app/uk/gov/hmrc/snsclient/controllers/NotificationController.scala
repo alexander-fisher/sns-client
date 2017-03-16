@@ -38,7 +38,7 @@ class NotificationController @Inject()(sns: SnsApi, metrics: Metrics) extends Ba
         Ok(Json.toJson(BatchDeliveryStatus(statuses)))
     } recover {
       case e =>
-        Logger.warn(s"Batch creation of endpoints failed ${e.getStackTrace.mkString("\n")}")
+        Logger.warn(s"Batch creation of endpoints failed ${e.getMessage}")
         metrics.batchPublicationFailure()
         BadRequest(Json.toJson(Map("error" -> s"Batch notification publication failed: [${e.getMessage}]")))
     }

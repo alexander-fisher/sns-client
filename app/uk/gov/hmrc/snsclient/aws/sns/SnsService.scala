@@ -47,7 +47,6 @@ class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arn
           metrics.publishFailure()
           DeliveryStatus.failure(request.id, ex.getMessage)
       }
-
     }
   }
 

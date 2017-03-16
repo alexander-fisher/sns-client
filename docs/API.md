@@ -91,8 +91,10 @@ The response is a Map[String, Option[String]], where the key is the registration
 ##### Response
 
     {
-        "12334": "Failure",
+      "deliveryStatuses": {
+        "12334": "Success",
         "43211": "Success"
+      }
     }
 
 ### License
