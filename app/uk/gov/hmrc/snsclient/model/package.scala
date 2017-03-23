@@ -18,15 +18,7 @@ package uk.gov.hmrc.snsclient.model
 import scala.language.postfixOps
 
 case class Endpoint(os: String, registrationToken: String)
-case class Endpoints(endpoints: Seq[Endpoint])
 case class CreateEndpointStatus(id: String, endpointArn: Option[String] = None)
-case class BatchEndpointsStatus(deliveryStatuses: Map[String, Option[String]])
-
-object BatchEndpointsStatus {
-  def apply(statuses:Seq[CreateEndpointStatus]) : BatchEndpointsStatus = {
-    BatchEndpointsStatus(statuses map(p => p.id-> p.endpointArn) toMap)
-  }
-}
 
 object CreateEndpointStatus {
   def success(id: String, endpointArn: String) = CreateEndpointStatus(id: String, Some(endpointArn))

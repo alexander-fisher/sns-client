@@ -49,10 +49,10 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       when(sns.createEndpoints(eqs(Seq(androidEndpoint)))(any[ExecutionContext])).thenReturn(successful(Seq(androidEndpointStatus)))
 
-      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Seq(androidEndpoint))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus)))
+      contentAsJson(result) mustEqual toJson(Seq(androidEndpointStatus) map(p => p.id-> p.endpointArn) toMap)
       verify(metrics, times(1)).endpointCreationSuccess()
     }
 
@@ -64,10 +64,10 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
       when(sns.createEndpoints(eqs(Seq(androidEndpoint, endpoint)))(any[ExecutionContext]))
         .thenReturn(successful(Seq(androidEndpointStatus, endpointStatus)))
 
-      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint, endpoint)))))
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Seq(androidEndpoint, endpoint))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus, endpointStatus)))
+      contentAsJson(result) mustEqual toJson(Seq(androidEndpointStatus, endpointStatus) map(p => p.id-> p.endpointArn) toMap)
       verify(metrics, times(1)).endpointCreationSuccess()
     }
 
@@ -75,10 +75,10 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
 
       when(sns.createEndpoints(any[Seq[Endpoint]])(any[ExecutionContext])).thenReturn(successful(Seq(androidEndpointStatus)))
 
-      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
+      val result = call( controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Seq(androidEndpoint))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus)))
+      contentAsJson(result) mustEqual toJson(Seq(androidEndpointStatus) map(p => p.id-> p.endpointArn) toMap)
       verify(metrics, times(1)).endpointCreationSuccess()
     }
 
@@ -91,10 +91,10 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
       when(sns.createEndpoints(eqs(Seq(androidEndpoint, endpoint)))(any[ExecutionContext]))
         .thenReturn(successful(Seq(androidEndpointStatus, endpointStatus)))
 
-      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint, endpoint)))))
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Seq(androidEndpoint, endpoint))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchEndpointsStatus(Seq(androidEndpointStatus, endpointStatus)))
+      contentAsJson(result) mustEqual toJson(Seq(androidEndpointStatus, endpointStatus) map(p => p.id-> p.endpointArn) toMap)
       verify(metrics, times(1)).endpointCreationSuccess()
       verifyNoMoreInteractions(metrics)
     }
@@ -104,7 +104,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
       when(sns.createEndpoints(any[Seq[Endpoint]])(any[ExecutionContext]))
         .thenReturn(Future failed new RuntimeException("Something nasty occurred processing these futures"))
 
-      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Endpoints(Seq(androidEndpoint)))))
+      val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Seq(androidEndpoint))))
 
       status(result) mustEqual BAD_REQUEST
       contentAsJson(result) mustEqual toJson(Map("error" -> "Batch creation of endpoints failed: [Something nasty occurred processing these futures]"))

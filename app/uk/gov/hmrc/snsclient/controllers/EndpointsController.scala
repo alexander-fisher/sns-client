@@ -26,15 +26,15 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 import uk.gov.hmrc.snsclient.metrics.Metrics
 import uk.gov.hmrc.snsclient.model.JsonFormats._
-import uk.gov.hmrc.snsclient.model.{BatchEndpointsStatus, Endpoints}
+import uk.gov.hmrc.snsclient.model.{CreateEndpointStatus, Endpoint}
 
 @Singleton
 class EndpointsController @Inject() (sns:SnsApi, metrics:Metrics) extends BaseController {
 
-  val createEndpoints: Action[Endpoints] = Action.async(parse.json[Endpoints]) { implicit req =>
-    sns.createEndpoints(req.body.endpoints)(defaultContext).map { statuses =>
+  val createEndpoints: Action[Seq[Endpoint]] = Action.async(parse.json[Seq[Endpoint]]) { implicit req =>
+    sns.createEndpoints(req.body)(defaultContext).map { (statuses: Seq[CreateEndpointStatus]) =>
       metrics.endpointCreationSuccess()
-      Ok(Json.toJson(BatchEndpointsStatus(statuses)))
+      Ok(Json.toJson(statuses map(p => p.id-> p.endpointArn) toMap))
     } recover {
       case e =>
         Logger.error(s"Batch creation of endpoints failed ${e.getMessage}")

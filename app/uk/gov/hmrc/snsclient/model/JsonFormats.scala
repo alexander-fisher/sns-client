@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.snsclient.model
 
-import play.api.libs.json.{JsNull, JsObject, _}
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 object JsonFormats {
 
@@ -35,6 +36,16 @@ object JsonFormats {
     }
   }
 
+  implicit val tokenReads: Reads[Endpoint] = (
+    (JsPath \ "device" \ "os").read[String] and
+      (JsPath \ "token").read[String]
+    ) (Endpoint.apply _)
+
+  implicit val tokenWrites: Writes[Endpoint] = (
+    (JsPath \ "device" \ "os").write[String] and
+      (JsPath \ "token").write[String]
+    ) (unlift(Endpoint.unapply))
+
   private def toOptionTuple(kv: (String,JsValue)) : (String, Option[String]) =
     (kv._1, kv._2) match {
       case (k, JsString(v)) => k -> Some(v)
@@ -44,9 +55,6 @@ object JsonFormats {
 
 
   implicit val mapOptionFormat = Format(mapReads, mapWrites)
-  implicit val endpointFormat = Json.format[Endpoint]
-  implicit val endpointsFormat = Json.format[Endpoints]
-  implicit val batchEndpointsStatusFormat = Json.format[BatchEndpointsStatus]
   implicit val createEndpointStatusFormat = Json.format[CreateEndpointStatus]
   implicit val notificationFormat = Json.format[Notification]
   implicit val notificationsFormat = Json.format[Notifications]
