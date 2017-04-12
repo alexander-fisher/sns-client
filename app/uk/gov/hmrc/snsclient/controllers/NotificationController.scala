@@ -31,14 +31,14 @@ import uk.gov.hmrc.snsclient.model._
 @Singleton
 class NotificationController @Inject()(sns: SnsApi, metrics: Metrics) extends BaseController {
 
-  val sendNotifications: Action[Notifications] = Action.async(parse.json[Notifications]) { implicit req =>
-    sns.publish(req.body.notifications)(defaultContext).map {
-      statuses =>
+  val sendNotifications: Action[Seq[Notification]] = Action.async(parse.json[Seq[Notification]]) { implicit req =>
+    sns.publish(req.body)(defaultContext).map {
+      (statuses: Seq[DeliveryStatus]) =>
         metrics.batchPublicationSuccess()
-        Ok(Json.toJson(BatchDeliveryStatus(statuses)))
+        Ok(Json.toJson(statuses map(p => p.id -> p.status) toMap))
     } recover {
       case e =>
-        Logger.error(s"Batch creation of endpoints failed ${e.getMessage}")
+        Logger.error(s"Batch notification publication failed: [${e.getMessage}]")
         metrics.batchPublicationFailure()
         BadRequest(Json.toJson(Map("error" -> s"Batch notification publication failed: [${e.getMessage}]")))
     }
