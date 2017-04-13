@@ -25,19 +25,11 @@ object CreateEndpointStatus {
   def failure(id: String, message: String = "") = CreateEndpointStatus(id: String, None)
 }
 
-case class Notifications(notifications: Seq[Notification])
 case class Notification(endpointArn: String, message: String, id: String)
 case class DeliveryStatus(id: String, status: String, error: Option[String])
-case class BatchDeliveryStatus(deliveryStatuses: Map[String, String])
-
-object BatchDeliveryStatus {
-  def apply(statuses:Seq[DeliveryStatus]) : BatchDeliveryStatus = {
-    BatchDeliveryStatus(statuses map(p => p.id -> p.status) toMap)
-  }
-}
 
 object DeliveryStatus {
-  def success(notificationId: String) = DeliveryStatus(notificationId: String, "Success", None)
-  def failure(id: String, message: String = "") = DeliveryStatus(id: String, "Failed", Some(message))
-  def disabled(id: String, message: String = "") = DeliveryStatus(id: String, "Disabled", None)
+  def success(notificationId: String) = DeliveryStatus(notificationId: String, "success", None)
+  def failure(id: String, message: String = "") = DeliveryStatus(id: String, "failed", Some(message))
+  def disabled(id: String, message: String = "") = DeliveryStatus(id: String, "disabled", None)
 }

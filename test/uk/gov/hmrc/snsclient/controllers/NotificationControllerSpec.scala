@@ -50,12 +50,12 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val request = toJson(Notifications(Seq(androidNotification)))
+      val request = toJson(Seq(androidNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+      contentAsJson(result) mustEqual toJson(response map(p => p.id -> p.status) toMap)
       verify(metrics, times(1)).batchPublicationSuccess()
       verifyNoMoreInteractions(metrics)
     }
@@ -67,12 +67,12 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val request = toJson(Notifications(Seq(androidNotification, androidNotification)))
+      val request = toJson(Seq(androidNotification, androidNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+      contentAsJson(result) mustEqual toJson(response map(p => p.id -> p.status) toMap)
       verify(metrics, times(1)).batchPublicationSuccess()
       verifyNoMoreInteractions(metrics)
     }
@@ -84,12 +84,12 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val request = toJson(Notifications(Seq(androidNotification, androidNotification)))
+      val request = toJson(Seq(androidNotification, androidNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(response))
+      contentAsJson(result) mustEqual toJson(response map(p => p.id -> p.status) toMap)
       verify(metrics, times(1)).batchPublicationSuccess()
       verifyNoMoreInteractions(metrics)
     }
@@ -105,11 +105,11 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
       val result = call(
         controller.sendNotifications,
         postSnsRequest(notificationsUrl)
-          .withJsonBody(toJson(Notifications(Seq(androidNotification))))
+          .withJsonBody(toJson(Seq(androidNotification)))
       )
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(BatchDeliveryStatus(disabledResponse))
+      contentAsJson(result) mustEqual toJson(disabledResponse map(p => p.id -> p.status) toMap)
 
       verify(metrics, times(1)).batchPublicationSuccess()
       verifyNoMoreInteractions(metrics)
@@ -120,7 +120,7 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
         .thenReturn(Future failed new RuntimeException("Something nasty occurred processing these futures"))
 
-      val request = toJson(Notifications(Seq(androidNotification, androidNotification)))
+      val request = toJson(Seq(androidNotification, androidNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 

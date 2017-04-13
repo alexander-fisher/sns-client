@@ -57,7 +57,5 @@ object JsonFormats {
   implicit val mapOptionFormat = Format(mapReads, mapWrites)
   implicit val createEndpointStatusFormat = Json.format[CreateEndpointStatus]
   implicit val notificationFormat = Json.format[Notification]
-  implicit val notificationsFormat = Json.format[Notifications]
   implicit val deliveryStatusFormat: OFormat[DeliveryStatus] = Json.format[DeliveryStatus]
-  implicit val batchDeliveryStatus: OFormat[BatchDeliveryStatus] = Json.format[BatchDeliveryStatus]
 }
