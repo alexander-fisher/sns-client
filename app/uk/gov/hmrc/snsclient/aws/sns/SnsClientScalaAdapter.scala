@@ -51,17 +51,18 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
   def publish(notification: Notification)(implicit ctx: ExecutionContext): Future[PublishResult] =
     withAsyncHandler[PublishRequest, PublishResult] { handler =>
 
-      val request = (notification.platform, notification.messageId) match {
-        case ("WNS", Some(messageId)) => {
+      val request = (notification.os, notification.messageId) match {
+        case ("windows", Some(messageId)) => {
           new PublishRequest()
             .withMessage(buildDefaultMessage(notification.message, messageId).toString())
             .withTargetArn(notification.endpointArn)
         }
-        case ("FCM", Some(messageId)) =>
+        case ("ios" | "android", Some(messageId)) => {
           new PublishRequest()
             .withMessageStructure("json")
             .withMessage(buildFcmMessage(notification.message, messageId).toString())
             .withTargetArn(notification.endpointArn)
+        }
         case (_, None) =>
           new PublishRequest()
             .withMessage(notification.message)
