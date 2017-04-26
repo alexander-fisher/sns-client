@@ -49,36 +49,36 @@ class SnsServiceSpec extends UnitSpec with ResettingMockitoSugar with DefaultTes
 
     "return a DeliveryStatus(\"Success\") when SNS client publishes successfully" in {
 
-      when(client.publish(androidNotification)).thenReturn(successful(new PublishResult()))
+      when(client.publish(wnsNotification)).thenReturn(successful(new PublishResult()))
 
       val service = newService(defaultSnsPropertyMap)
-      val result = await(service.publish(Seq(androidNotification)))
+      val result = await(service.publish(Seq(wnsNotification)))
       result.size shouldBe 1
-      result.head shouldBe DeliveryStatus.success(androidNotification.id)
+      result.head shouldBe DeliveryStatus.success(wnsNotification.id)
       verify(metrics, times(1)).publishSuccess()
       verifyNoMoreInteractions(metrics)
     }
 
     "return a DeliveryStatus(\"Failed\") when SNS client fails" in {
 
-      when(client.publish(androidNotification)).thenReturn(failed(new RuntimeException("oh noes!")))
+      when(client.publish(wnsNotification)).thenReturn(failed(new RuntimeException("oh noes!")))
 
       val service = newService(defaultSnsPropertyMap)
-      val result = await(service.publish(Seq(androidNotification)))
+      val result = await(service.publish(Seq(wnsNotification)))
       result.size shouldBe 1
-      result.head shouldBe DeliveryStatus.failure(androidNotification.id, "oh noes!")
+      result.head shouldBe DeliveryStatus.failure(wnsNotification.id, "oh noes!")
       verify(metrics, times(1)).publishFailure()
       verifyNoMoreInteractions(metrics)
     }
 
     "return a DeliveryStatus(\"Disabled\") when the endpointARN has been diabled" in {
 
-      when(client.publish(androidNotification)).thenReturn(failed(new EndpointDisabledException("Endpoint is disabled")))
+      when(client.publish(wnsNotification)).thenReturn(failed(new EndpointDisabledException("Endpoint is disabled")))
 
       val service = newService(defaultSnsPropertyMap)
-      val result = await(service.publish(Seq(androidNotification)))
+      val result = await(service.publish(Seq(wnsNotification)))
       result.size shouldBe 1
-      result.head shouldBe DeliveryStatus.disabled(androidNotification.id, "oh noes!")
+      result.head shouldBe DeliveryStatus.disabled(wnsNotification.id, "oh noes!")
       verify(metrics, times(1)).endpointDisabledFailure()
       verifyNoMoreInteractions(metrics)
     }

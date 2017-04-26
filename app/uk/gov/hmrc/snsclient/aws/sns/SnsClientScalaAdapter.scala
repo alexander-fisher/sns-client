@@ -19,9 +19,11 @@ package uk.gov.hmrc.snsclient.aws.sns
 import javax.inject.{Inject, Singleton}
 
 import com.amazonaws.services.sns.AmazonSNSAsync
-import com.amazonaws.services.sns.model.{CreatePlatformEndpointRequest, CreatePlatformEndpointResult, PublishRequest, PublishResult}
+import com.amazonaws.services.sns.model._
+import play.api.Logger
+import play.api.libs.json._
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
-import uk.gov.hmrc.snsclient.model.{Endpoint, Notification}
+import uk.gov.hmrc.snsclient.model._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
@@ -29,12 +31,44 @@ import scala.language.postfixOps
 @Singleton
 class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSupport {
 
+  def buildDefaultMessage(message: String, messageId: String): JsObject = {
+    JsObject(Seq(
+      "notification" -> JsObject(Seq(
+        "body" -> JsString(message)
+      )),
+      "data" -> JsObject(Seq(
+        "messageId" -> JsString(messageId)
+      ))
+    ))
+  }
+
+  def buildFcmMessage(message: String, messageId: String): JsObject = {
+    JsObject(Seq(
+      "GCM" -> JsString(buildDefaultMessage(message, messageId).toString())
+    ))
+  }
+
   def publish(notification: Notification)(implicit ctx: ExecutionContext): Future[PublishResult] =
     withAsyncHandler[PublishRequest, PublishResult] { handler =>
 
-      val request = new PublishRequest()
-        .withMessage(notification.message)
-        .withTargetArn(notification.endpointArn)
+      val request = (notification.platform, notification.messageId) match {
+        case ("WNS", Some(messageId)) => {
+          new PublishRequest()
+            .withMessage(buildDefaultMessage(notification.message, messageId).toString())
+            .withTargetArn(notification.endpointArn)
+        }
+        case ("FCM", Some(messageId)) =>
+          new PublishRequest()
+            .withMessageStructure("json")
+            .withMessage(buildFcmMessage(notification.message, messageId).toString())
+            .withTargetArn(notification.endpointArn)
+        case (_, None) =>
+          new PublishRequest()
+            .withMessage(notification.message)
+            .withTargetArn(notification.endpointArn)
+      }
+
+      Logger.debug(request.toString)
 
       client.publishAsync(request, handler)
     }

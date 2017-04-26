@@ -34,15 +34,34 @@ class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with
 
   "SnsClientScalaAdapter" should {
 
-    "publish" in {
-
+    "publish a simple text only message" in {
       val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
       val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
 
-      adapter.publish(androidNotification)
+      adapter.publish(wnsNotification)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe androidNotification.message
-      captor.getValue.getTargetArn shouldBe androidNotification.endpointArn
+      captor.getValue.getMessage shouldBe wnsNotification.message
+      captor.getValue.getTargetArn shouldBe wnsNotification.endpointArn
+    }
+
+    "publish a message with data to an WSN endpoint" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(wnsNotificationWithMessageId)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe "{\"notification\":{\"body\":\"Tax is fun!\"},\"data\":{\"messageId\":\"123\"}}"
+      captor.getValue.getTargetArn shouldBe wnsNotificationWithMessageId.endpointArn
+    }
+
+    "publish a message with data to an FCN endpoint" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(fcmNotificationWithMessageId)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
+      captor.getValue.getTargetArn shouldBe fcmNotificationWithMessageId.endpointArn
     }
 
     "createEndpoint" in {
