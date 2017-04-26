@@ -34,15 +34,44 @@ class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with
 
   "SnsClientScalaAdapter" should {
 
-    "publish" in {
-
+    "publish a simple text only message" in {
       val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
       val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
 
-      adapter.publish(androidNotification)
+      adapter.publish(windowsNotification)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe androidNotification.message
-      captor.getValue.getTargetArn shouldBe androidNotification.endpointArn
+      captor.getValue.getMessage shouldBe windowsNotification.message
+      captor.getValue.getTargetArn shouldBe windowsNotification.endpointArn
+    }
+
+    "publish a message with data to a windows device" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(windowsNotificationWithMessageId)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe "{\"notification\":{\"body\":\"Tax is fun!\"},\"data\":{\"messageId\":\"123\"}}"
+      captor.getValue.getTargetArn shouldBe windowsNotificationWithMessageId.endpointArn
+    }
+
+    "publish a message with data to a android device" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(androidNotificationWithMessageId)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
+      captor.getValue.getTargetArn shouldBe androidNotificationWithMessageId.endpointArn
+    }
+
+    "publish a message with data to a ios device" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(iosNotificationWithMessageId)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
+      captor.getValue.getTargetArn shouldBe iosNotificationWithMessageId.endpointArn
     }
 
     "createEndpoint" in {

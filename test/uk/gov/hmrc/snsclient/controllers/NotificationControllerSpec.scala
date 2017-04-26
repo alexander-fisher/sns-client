@@ -46,11 +46,11 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
     "return 200 and the delivery status for a single successful notification" in {
 
-      val response = Seq(DeliveryStatus.success(androidNotification.id))
+      val response = Seq(DeliveryStatus.success(windowsNotification.id))
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val request = toJson(Seq(androidNotification))
+      val request = toJson(Seq(windowsNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
@@ -63,11 +63,11 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
     "return 200 and the delivery status for 2 successful notification" in {
 
-      val response = Seq(DeliveryStatus.success(androidNotification.id), DeliveryStatus.success(androidNotification.id))
+      val response = Seq(DeliveryStatus.success(windowsNotification.id), DeliveryStatus.success(windowsNotification.id))
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val request = toJson(Seq(androidNotification, androidNotification))
+      val request = toJson(Seq(windowsNotification, windowsNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
@@ -80,11 +80,11 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
     "return 200 and the delivery status for 1 successful and 1 failed notification" in {
 
-      val response = Seq(DeliveryStatus.success(androidNotification.id), DeliveryStatus.failure(androidNotification.id))
+      val response = Seq(DeliveryStatus.success(windowsNotification.id), DeliveryStatus.failure(windowsNotification.id))
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext])).thenReturn(successful(response))
 
-      val request = toJson(Seq(androidNotification, androidNotification))
+      val request = toJson(Seq(windowsNotification, windowsNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 
@@ -97,7 +97,7 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
 
     "return 200 and DISABLED when the endpointArn has been disabled" in {
 
-      val disabledResponse = Seq(DeliveryStatus.disabled(androidNotification.id))
+      val disabledResponse = Seq(DeliveryStatus.disabled(windowsNotification.id))
 
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
         .thenReturn(successful(disabledResponse))
@@ -105,7 +105,7 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
       val result = call(
         controller.sendNotifications,
         postSnsRequest(notificationsUrl)
-          .withJsonBody(toJson(Seq(androidNotification)))
+          .withJsonBody(toJson(Seq(windowsNotification)))
       )
 
       status(result) mustEqual OK
@@ -120,7 +120,7 @@ class NotificationControllerSpec extends ControllerSpec with DefaultTestData {
       when(sns.publish(any[Seq[Notification]])(any[ExecutionContext]))
         .thenReturn(Future failed new RuntimeException("Something nasty occurred processing these futures"))
 
-      val request = toJson(Seq(androidNotification, androidNotification))
+      val request = toJson(Seq(windowsNotification, windowsNotification))
 
       val result = call(controller.sendNotifications, postSnsRequest(notificationsUrl).withJsonBody(request))
 

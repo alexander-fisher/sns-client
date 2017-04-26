@@ -25,7 +25,7 @@ object CreateEndpointStatus {
   def failure(id: String, message: String = "") = CreateEndpointStatus(id: String, None)
 }
 
-case class Notification(endpointArn: String, message: String, id: String)
+case class Notification(id: String, endpointArn: String, os: String, message: String, messageId: Option[String])
 case class DeliveryStatus(id: String, status: String, error: Option[String])
 
 object DeliveryStatus {
