@@ -18,12 +18,13 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.sns.AmazonSNSAsync
-import com.amazonaws.services.sns.model.{CreatePlatformEndpointRequest, CreatePlatformEndpointResult, PublishRequest, PublishResult}
+import com.amazonaws.services.sns.model._
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.support.{DefaultTestData, ResettingMockitoSugar}
+import collection.JavaConversions._
 
 class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with DefaultTestData {
 
@@ -50,7 +51,10 @@ class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with
 
       adapter.publish(windowsNotificationWithMessageId)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe "{\"notification\":{\"body\":\"Tax is fun!\"},\"data\":{\"messageId\":\"123\"}}"
+      captor.getValue.getMessage shouldBe "{\"WNS\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
+      captor.getValue.getMessageAttributes shouldBe mapAsJavaMap(Map(
+        "AWS.SNS.MOBILE.WNS.Type" -> new MessageAttributeValue().withDataType("String").withStringValue("wns/raw")
+      ))
       captor.getValue.getTargetArn shouldBe windowsNotificationWithMessageId.endpointArn
     }
 

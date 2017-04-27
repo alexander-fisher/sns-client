@@ -24,6 +24,7 @@ import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
 import uk.gov.hmrc.snsclient.model._
+import collection.JavaConversions._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
@@ -31,30 +32,15 @@ import scala.language.postfixOps
 @Singleton
 class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSupport {
 
-  def buildDefaultMessage(message: String, messageId: String): JsObject = {
-    JsObject(Seq(
-      "notification" -> JsObject(Seq(
-        "body" -> JsString(message)
-      )),
-      "data" -> JsObject(Seq(
-        "messageId" -> JsString(messageId)
-      ))
-    ))
-  }
-
-  def buildFcmMessage(message: String, messageId: String): JsObject = {
-    JsObject(Seq(
-      "GCM" -> JsString(buildDefaultMessage(message, messageId).toString())
-    ))
-  }
-
   def publish(notification: Notification)(implicit ctx: ExecutionContext): Future[PublishResult] =
     withAsyncHandler[PublishRequest, PublishResult] { handler =>
 
       val request = (notification.os, notification.messageId) match {
         case ("windows", Some(messageId)) => {
           new PublishRequest()
-            .withMessage(buildDefaultMessage(notification.message, messageId).toString())
+            .withMessageStructure("json")
+            .withMessage(buildWnsMessage(notification.message, messageId).toString())
+            .withMessageAttributes(buildWnsMessageAttributes())
             .withTargetArn(notification.endpointArn)
         }
         case ("ios" | "android", Some(messageId)) => {
@@ -69,7 +55,7 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
             .withTargetArn(notification.endpointArn)
       }
 
-      Logger.debug(request.toString)
+      Logger.info(request.toString)
 
       client.publishAsync(request, handler)
     }
@@ -84,4 +70,30 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
 
       client.createPlatformEndpointAsync(request, handler)
     }
+
+  def buildDefaultMessage(message: String, messageId: String): JsObject = JsObject(
+    Seq(
+      "notification" -> JsObject(Seq(
+        "body" -> JsString(message)
+      )),
+      "data" -> JsObject(Seq(
+        "messageId" -> JsString(messageId)
+      ))
+    ))
+
+
+  def buildFcmMessage(message: String, messageId: String): JsObject = JsObject(
+    Seq(
+      "GCM" -> JsString(buildDefaultMessage(message, messageId).toString())
+    ))
+
+  def buildWnsMessage(message: String, messageId: String): JsObject = JsObject(
+    Seq(
+      "WNS" -> JsString(buildDefaultMessage(message, messageId).toString())
+    ))
+
+
+  def buildWnsMessageAttributes(): Map[String, MessageAttributeValue] = Map(
+    "AWS.SNS.MOBILE.WNS.Type" -> new MessageAttributeValue().withDataType("String").withStringValue("wns/raw")
+  )
 }
