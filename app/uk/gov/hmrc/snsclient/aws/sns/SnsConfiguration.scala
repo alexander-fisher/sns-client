@@ -20,11 +20,10 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.Configuration
 import uk.gov.hmrc.snsclient.aws.AwsConfiguration
+import uk.gov.hmrc.snsclient.config.ConfigKeys._
 import uk.gov.hmrc.snsclient.config.RequiredKeys
 
 import scala.language.postfixOps
-
-import uk.gov.hmrc.snsclient.config.ConfigKeys._
 
 @Singleton
 class SnsConfiguration @Inject()(val configuration: Configuration) extends AwsConfiguration {
@@ -40,7 +39,7 @@ object GcmConfiguration extends RequiredKeys {
     gcmConfig.getConfig(androidConfigurationKey).map( _ =>
       GcmConfiguration(
         requiredString(gcmOsKey, gcmConfig),
-        requiredString(gcmApiKey, gcmConfig),
+        requiredEncryptedString(gcmApiKey, gcmConfig),
         requiredString(gcmApplicaitonArnKey, gcmConfig)
       )
     )

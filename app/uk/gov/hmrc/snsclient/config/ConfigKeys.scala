@@ -21,6 +21,7 @@ object ConfigKeys {
   val gcmOsKey = "aws.platform.gcm.osName"
   val gcmApiKey = "aws.platform.gcm.apiKey"
   val gcmApplicaitonArnKey = "aws.platform.gcm.applicationArn"
+  val awsEncryptionKey = "aws.encryption"
   val awsAccessKey = "aws.accessKey"
   val awsSecretKey = "aws.secret"
   val awsRegionKey = "aws.region"

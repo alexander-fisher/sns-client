@@ -25,8 +25,9 @@ trait AwsConfiguration extends RequiredKeys {
 
   def configuration:Configuration
 
-  val accessKey:    String = requiredString(awsAccessKey, configuration)
-  val secret:       String = requiredString(awsSecretKey, configuration)
+  val accessKey:    String = requiredEncryptedString(awsAccessKey, configuration)
+  val secret:       String = requiredEncryptedString(awsSecretKey, configuration)
+
   val useStubbing:  Boolean = requiredBoolean(awsStubbingKey, configuration)
 
   val region:          Option[String] = configuration getString awsRegionKey

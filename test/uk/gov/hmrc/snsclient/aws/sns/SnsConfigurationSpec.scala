@@ -18,64 +18,88 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import play.api.Configuration
+import uk.gov.hmrc.crypto.{CryptoGCMWithKeysFromConfig, PlainText}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.snsclient.config.ConfigKeys._
+import uk.gov.hmrc.snsclient.config.EncryptionHelper
 import uk.gov.hmrc.support.ConfigurationSupport
 
 @RunWith(classOf[JUnitRunner])
 class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
 
-  "SnsConfiguration" should {
+  val secretConfigMap = Map(s"$awsEncryptionKey.key" -> "gvBoGdgzqG1AarzF1LY0zQ==")
 
-    val config = Map (
-      awsAccessKey -> "v1",
-      awsSecretKey -> "v2",
+  trait TestScrambler extends EncryptionHelper {
+    val secretConfig = loadConfig(secretConfigMap)
+    val cipher = CryptoGCMWithKeysFromConfig(awsEncryptionKey, secretConfig)
+    def scramble(s: String): String = cipher.encrypt(PlainText(s)).value
+  }
+
+  trait Setup extends TestScrambler {
+    val config = secretConfigMap ++ Map (
+      awsAccessKey -> scramble("access-key"),
+      awsSecretKey -> scramble("secret-key"),
       awsStubbingKey -> false
     )
 
-    s"fail to load if AWS $awsAccessKey is not set" in {
-      config.shouldFailWithoutKey(awsAccessKey)
-      config.shouldFailIfKeyIsEmpty(awsAccessKey)
-    }
-
-    s"fail to load if AWS $awsSecretKey is not set" in {
-      config.shouldFailWithoutKey(awsSecretKey)
-      config.shouldFailIfKeyIsEmpty(awsSecretKey)
-    }
-
-    s"fail to load if AWS $awsStubbingKey is not set" in {
-      config.shouldFailWithoutBooleanKey(awsStubbingKey)
-    }
-
     val androidConfig = config ++ Map (
-      gcmApiKey -> "api",
+      gcmApiKey -> scramble("api-key"),
       gcmApplicaitonArnKey -> "arn",
       gcmOsKey -> "android",
       awsStubbingKey -> false
     )
+  }
 
-    s"fail if $gcmOsKey is missing from the Android configuration" in {
+  "EncryptionHelper" should {
+    s"decrypt values given a $awsEncryptionKey" in new TestScrambler {
+      def configuration: Configuration = loadConfig(secretConfigMap)
+      def helper = new EncryptionHelper { }
+
+      val plainText = "Mr. SMIGGS was a gentleman, And he lived in London town;"
+
+      helper.plainTextValue(scramble(plainText), configuration) shouldBe plainText
+    }
+  }
+
+  "SnsConfiguration" should {
+    
+    s"fail to load if AWS $awsAccessKey is not set" in new Setup {
+      config.shouldFailWithoutKey(awsAccessKey)
+      config.shouldFailIfKeyIsEmpty(awsAccessKey)
+    }
+
+    s"fail to load if AWS $awsSecretKey is not set" in new Setup {
+      config.shouldFailWithoutKey(awsSecretKey)
+      config.shouldFailIfKeyIsEmpty(awsSecretKey)
+    }
+
+    s"fail to load if AWS $awsStubbingKey is not set" in new Setup {
+      config.shouldFailWithoutBooleanKey(awsStubbingKey)
+    }
+
+    s"fail if $gcmOsKey is missing from the Android configuration" in new Setup {
       androidConfig.shouldFailWithoutKey(gcmOsKey)
       androidConfig.shouldFailIfKeyIsEmpty(gcmOsKey)
     }
 
-    s"fail if $gcmApplicaitonArnKey is missing from the Android configuration" in {
+    s"fail if $gcmApplicaitonArnKey is missing from the Android configuration" in new Setup {
       androidConfig.shouldFailWithoutKey(gcmApplicaitonArnKey)
       androidConfig.shouldFailIfKeyIsEmpty(gcmApplicaitonArnKey)
     }
 
-    s"fail if $gcmApiKey is missing from the Android configuration" in {
+    s"fail if $gcmApiKey is missing from the Android configuration" in new Setup {
       androidConfig.shouldFailWithoutKey(gcmApiKey)
       androidConfig.shouldFailIfKeyIsEmpty(gcmApiKey)
     }
 
-    "build a seq of defined platforms" in {
-      val config = loadConfig(androidConfig)
-      new SnsConfiguration(config).platforms shouldBe List(
+    "build a seq of defined platforms" in new Setup {
+      val theConfig: Configuration = loadConfig(androidConfig)
+      new SnsConfiguration(theConfig).platforms shouldBe List(
         Some(GcmConfiguration(
-          config.getString(gcmOsKey).get,
-          config.getString(gcmApiKey).get,
-          config.getString(gcmApplicaitonArnKey).get))
+          theConfig.getString(gcmOsKey).get,
+          plainTextValue(theConfig.getString(gcmApiKey).get, secretConfig),
+          theConfig.getString(gcmApplicaitonArnKey).get))
       )
     }
   }

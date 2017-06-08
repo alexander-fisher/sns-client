@@ -30,10 +30,11 @@ trait DefaultTestData {
   def postSnsRequest(url: String) = FakeRequest("POST", url).withHeaders("Content-Type" -> "application/json", "Accept" -> "application/vnd.hmrc.1.0+json")
 
   val defaultConfig = Map(
+    s"$awsEncryptionKey.key" -> "gvBoGdgzqG1AarzF1LY0zQ==",
+    gcmApiKey -> "vAZzRIMPUrzpp7f+9Z3DyboiY3QFeWHhfTS90aI0IDbWuRc=",
+    awsAccessKey -> "cIN2VG9Gkf5EInwn6ZQXDgIBxGd0yQW2RJuxO8+aBmjno/8=",
+    awsSecretKey -> "1JVN4ZxHpWo4AuTwsdKyE9Px7HvrAvp3cq6wZNwKgw9ciR0=",
     gcmOsKey -> "android",
-    gcmApiKey -> "test-apiKey",
-    awsAccessKey -> "test-accessKey",
-    awsSecretKey -> "test-secret",
     gcmApplicaitonArnKey -> "test-applicationArn",
     awsRegionKey -> "eu-west-1",
     awsRegionOverrideKey -> "stubbed-aws-sns",

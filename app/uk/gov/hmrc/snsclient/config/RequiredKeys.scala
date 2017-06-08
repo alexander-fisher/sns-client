@@ -17,8 +17,10 @@
 package uk.gov.hmrc.snsclient.config
 
 import play.api.Configuration
+import uk.gov.hmrc.crypto.{Crypted, CryptoGCMWithKeysFromConfig}
+import uk.gov.hmrc.snsclient.config.ConfigKeys.awsEncryptionKey
 
-trait RequiredKeys {
+trait RequiredKeys extends EncryptionHelper {
 
   def requiredString(key:String, config:Configuration): String = {
     config getString key match {
@@ -28,7 +30,18 @@ trait RequiredKeys {
     }
   }
 
+  def requiredEncryptedString(key:String, config:Configuration): String = {
+    plainTextValue(requiredString(key, config), config)
+  }
+
   def requiredBoolean(key:String, config:Configuration): Boolean = {
     config getBoolean key getOrElse(throw new IllegalArgumentException(s"property at [$key] was missing"))
+  }
+}
+
+trait EncryptionHelper {
+  def plainTextValue(scrambledValue: String, configuration: Configuration): String = {
+    val cipher = CryptoGCMWithKeysFromConfig(awsEncryptionKey, configuration)
+    cipher.decrypt(Crypted(scrambledValue)).value
   }
 }
