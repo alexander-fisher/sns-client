@@ -24,8 +24,8 @@ import play.api.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.snsclient.aws.AwsAsyncSupport
 import uk.gov.hmrc.snsclient.model._
-import collection.JavaConversions._
 
+import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
@@ -36,23 +36,23 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
     withAsyncHandler[PublishRequest, PublishResult] { handler =>
 
       val request = (notification.os, notification.messageId) match {
-        case ("windows", Some(messageId)) => {
+        case ("windows", Some(messageId)) =>
           new PublishRequest()
             .withMessageStructure("json")
             .withMessage(buildWnsMessage(notification.message, messageId).toString())
             .withMessageAttributes(buildWnsMessageAttributes())
             .withTargetArn(notification.endpointArn)
-        }
-        case ("ios" | "android", Some(messageId)) => {
+        case ("windows", None) =>
+          new PublishRequest()
+            .withMessage(notification.message)
+            .withTargetArn(notification.endpointArn)
+        case ("ios" | "android", messageId) =>
           new PublishRequest()
             .withMessageStructure("json")
             .withMessage(buildFcmMessage(notification.message, messageId).toString())
             .withTargetArn(notification.endpointArn)
-        }
-        case (_, None) =>
-          new PublishRequest()
-            .withMessage(notification.message)
-            .withTargetArn(notification.endpointArn)
+        case (platform, _) =>
+          throw new IllegalArgumentException(s"$platform is not supported")
       }
 
       Logger.info(request.toString)
@@ -71,7 +71,31 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
       client.createPlatformEndpointAsync(request, handler)
     }
 
-  def buildDefaultMessage(message: String, messageId: String): JsObject = JsObject(
+  def buildFcmMessage(message: String, messageId: Option[String]): JsObject = JsObject(
+    Seq(
+      "GCM" -> JsString(buildFcmPayload(message, messageId).toString())
+    ))
+
+  def buildFcmPayload(message: String, messageId: Option[String]): JsObject = messageId match {
+    case Some(id) => JsObject(Seq(
+      "data" -> JsObject(Seq(
+        "messageId" -> JsString(id),
+        "text" -> JsString(message)
+      ))
+    ))
+    case None => JsObject(Seq(
+      "notification" -> JsObject(Seq(
+        "text" -> JsString(message)
+      ))
+    ))
+  }
+
+  def buildWnsMessage(message: String, messageId: String): JsObject = JsObject(
+    Seq(
+      "WNS" -> JsString(buildWnsPayload(message, messageId).toString())
+    ))
+
+  def buildWnsPayload(message: String, messageId: String): JsObject = JsObject(
     Seq(
       "notification" -> JsObject(Seq(
         "body" -> JsString(message)
@@ -80,18 +104,6 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
         "messageId" -> JsString(messageId)
       ))
     ))
-
-
-  def buildFcmMessage(message: String, messageId: String): JsObject = JsObject(
-    Seq(
-      "GCM" -> JsString(buildDefaultMessage(message, messageId).toString())
-    ))
-
-  def buildWnsMessage(message: String, messageId: String): JsObject = JsObject(
-    Seq(
-      "WNS" -> JsString(buildDefaultMessage(message, messageId).toString())
-    ))
-
 
   def buildWnsMessageAttributes(): Map[String, MessageAttributeValue] = Map(
     "AWS.SNS.MOBILE.WNS.Type" -> new MessageAttributeValue().withDataType("String").withStringValue("wns/raw")
