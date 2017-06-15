@@ -24,18 +24,20 @@ import org.mockito.Mockito._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.support.{DefaultTestData, ResettingMockitoSugar}
-import collection.JavaConversions._
+
+import scala.collection.JavaConversions._
 
 class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with DefaultTestData {
 
 
   private val client = resettingMock[AmazonSNSAsync]
+
   def adapter = new SnsClientScalaAdapter(client)
 
 
   "SnsClientScalaAdapter" should {
 
-    "publish a simple text only message" in {
+    "publish a simple text only message to a windows device" in {
       val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
       val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
 
@@ -58,24 +60,54 @@ class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with
       captor.getValue.getTargetArn shouldBe windowsNotificationWithMessageId.endpointArn
     }
 
-    "publish a message with data to a android device" in {
+    "publish a simple text only message to an android device" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(androidNotification)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe """{"GCM":"{\"notification\":{\"text\":\"Tax is fun!\"}}"}"""
+      captor.getValue.getTargetArn shouldBe androidNotificationWithMessageId.endpointArn
+    }
+
+    "publish a message with data to an android device" in {
       val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
       val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
 
       adapter.publish(androidNotificationWithMessageId)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
+      captor.getValue.getMessage shouldBe """{"GCM":"{\"data\":{\"messageId\":\"123\",\"text\":\"Tax is fun!\"}}"}"""
       captor.getValue.getTargetArn shouldBe androidNotificationWithMessageId.endpointArn
     }
 
-    "publish a message with data to a ios device" in {
+    "publish a simple text only message to an ios device" in {
+      val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
+      val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
+
+      adapter.publish(iosNotification)
+      verify(client).publishAsync(captor.capture(), handler.capture())
+      captor.getValue.getMessage shouldBe """{"GCM":"{\"notification\":{\"text\":\"Tax is fun!\"}}"}"""
+      captor.getValue.getTargetArn shouldBe iosNotificationWithMessageId.endpointArn
+    }
+
+    "publish a message with data to an ios device" in {
       val captor = ArgumentCaptor.forClass(classOf[PublishRequest])
       val handler = ArgumentCaptor.forClass(classOf[AsyncHandler[PublishRequest, PublishResult]])
 
       adapter.publish(iosNotificationWithMessageId)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
+      captor.getValue.getMessage shouldBe """{"GCM":"{\"data\":{\"messageId\":\"123\",\"text\":\"Tax is fun!\"}}"}"""
       captor.getValue.getTargetArn shouldBe iosNotificationWithMessageId.endpointArn
+    }
+
+    "throw an illegal argument exception given an unknown platform" in {
+      val unknownPlatform = "blackberry"
+
+      val exception = intercept[IllegalArgumentException] {
+        adapter.publish(simpleNotification("123", unknownPlatform))
+      }
+
+      exception.getMessage shouldBe s"$unknownPlatform is not supported"
     }
 
     "createEndpoint" in {

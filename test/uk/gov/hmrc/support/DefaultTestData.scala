@@ -44,7 +44,9 @@ trait DefaultTestData {
 
   val windowsNotification : Notification = simpleNotification(UUID.randomUUID().toString, "windows")
   val windowsNotificationWithMessageId : Notification = notificationWithMessageId(UUID.randomUUID().toString, "windows")
+  val androidNotification : Notification = simpleNotification(UUID.randomUUID().toString, "android")
   val androidNotificationWithMessageId : Notification = notificationWithMessageId(UUID.randomUUID().toString, "android")
+  val iosNotification : Notification = simpleNotification(UUID.randomUUID().toString, "ios")
   val iosNotificationWithMessageId : Notification = notificationWithMessageId(UUID.randomUUID().toString, "ios")
 
   def simpleNotification(id:String, os: String) = Notification(id, "registrationToken", os, "Tax is fun!", None)
