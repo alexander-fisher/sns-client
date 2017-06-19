@@ -20,28 +20,27 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.Configuration
 import uk.gov.hmrc.snsclient.aws.AwsConfiguration
+import uk.gov.hmrc.snsclient.config.ConfigKeys._
 import uk.gov.hmrc.snsclient.config.RequiredKeys
+import uk.gov.hmrc.snsclient.model.NativeOS
 
 import scala.language.postfixOps
-
-import uk.gov.hmrc.snsclient.config.ConfigKeys._
 
 @Singleton
 class SnsConfiguration @Inject()(val configuration: Configuration) extends AwsConfiguration {
 
-  val gcmConfiguration: Option[GcmConfiguration] = GcmConfiguration from configuration
-  val platforms: Seq[Option[GcmConfiguration]] = Seq(gcmConfiguration)
+  val platforms: Seq[Option[GcmConfiguration]] = NativeOS.platforms.map(GcmConfiguration.from(_, configuration)).filter(_.isDefined)
 }
 
 case class GcmConfiguration(osName: String, apiKey: String, applicationArn: String)
 
 object GcmConfiguration extends RequiredKeys {
-  def from(gcmConfig: Configuration): Option[GcmConfiguration] =
-    gcmConfig.getConfig(androidConfigurationKey).map( _ =>
+  def from(os: String, gcmConfig: Configuration): Option[GcmConfiguration] =
+    gcmConfig.getConfig(platformConfigurationKey.replace("PLATFORM", os)).map(_ =>
       GcmConfiguration(
-        requiredString(gcmOsKey, gcmConfig),
-        requiredString(gcmApiKey, gcmConfig),
-        requiredString(gcmApplicaitonArnKey, gcmConfig)
+        os,
+        requiredString(apiKey.replace("PLATFORM", os), gcmConfig),
+        requiredString(applicationArnKey.replace("PLATFORM", os), gcmConfig)
       )
     )
 }

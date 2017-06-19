@@ -17,10 +17,9 @@
 package uk.gov.hmrc.snsclient.config
 
 object ConfigKeys {
-  val androidConfigurationKey = "aws.platform.gcm"
-  val gcmOsKey = "aws.platform.gcm.osName"
-  val gcmApiKey = "aws.platform.gcm.apiKey"
-  val gcmApplicaitonArnKey = "aws.platform.gcm.applicationArn"
+  val platformConfigurationKey = "aws.platform.PLATFORM"
+  val apiKey = s"$platformConfigurationKey.apiKey"
+  val applicationArnKey = s"$platformConfigurationKey.applicationArn"
   val awsAccessKey = "aws.accessKey"
   val awsSecretKey = "aws.secret"
   val awsRegionKey = "aws.region"

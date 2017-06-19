@@ -21,4 +21,6 @@ object NativeOS {
   val Android = "android"
   val Ios     = "ios"
   val Windows = "windows"
+
+  val platforms = Seq(Android, Ios, Windows)
 }

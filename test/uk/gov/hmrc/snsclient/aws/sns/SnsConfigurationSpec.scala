@@ -19,7 +19,8 @@ package uk.gov.hmrc.snsclient.aws.sns
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.snsclient.config.ConfigKeys._
+import uk.gov.hmrc.snsclient.config.ConfigKeys.{apiKey, applicationArnKey, _}
+import uk.gov.hmrc.snsclient.model.NativeOS.{Android, Ios}
 import uk.gov.hmrc.support.ConfigurationSupport
 
 @RunWith(classOf[JUnitRunner])
@@ -27,7 +28,7 @@ class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
 
   "SnsConfiguration" should {
 
-    val config = Map (
+    val config = Map(
       awsAccessKey -> "v1",
       awsSecretKey -> "v2",
       awsStubbingKey -> false
@@ -47,35 +48,42 @@ class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
       config.shouldFailWithoutBooleanKey(awsStubbingKey)
     }
 
-    val androidConfig = config ++ Map (
-      gcmApiKey -> "api",
-      gcmApplicaitonArnKey -> "arn",
-      gcmOsKey -> "android",
-      awsStubbingKey -> false
+    val androidKey = Android
+    val iosKey = Ios
+    val androidApplicationArnKey = applicationArnKey.replace("PLATFORM", androidKey)
+    val iosApplicationArnKey = applicationArnKey.replace("PLATFORM", iosKey)
+    val androidApiKey = apiKey.replace("PLATFORM", androidKey)
+    val iosApiKey = apiKey.replace("PLATFORM", iosKey)
+
+    val androidConfig = config ++ Map(
+      awsStubbingKey -> false,
+      androidApiKey -> "android_api",
+      androidApplicationArnKey -> "android_arn",
+      iosApiKey -> "ios_api",
+      iosApplicationArnKey -> "ios_arn"
     )
 
-    s"fail if $gcmOsKey is missing from the Android configuration" in {
-      androidConfig.shouldFailWithoutKey(gcmOsKey)
-      androidConfig.shouldFailIfKeyIsEmpty(gcmOsKey)
+    s"fail if $applicationArnKey is missing from a platform configuration" in {
+      androidConfig.shouldFailWithoutKey(androidApplicationArnKey)
+      androidConfig.shouldFailIfKeyIsEmpty(androidApplicationArnKey)
     }
 
-    s"fail if $gcmApplicaitonArnKey is missing from the Android configuration" in {
-      androidConfig.shouldFailWithoutKey(gcmApplicaitonArnKey)
-      androidConfig.shouldFailIfKeyIsEmpty(gcmApplicaitonArnKey)
-    }
-
-    s"fail if $gcmApiKey is missing from the Android configuration" in {
-      androidConfig.shouldFailWithoutKey(gcmApiKey)
-      androidConfig.shouldFailIfKeyIsEmpty(gcmApiKey)
+    s"fail if $apiKey is missing from a platform configuration" in {
+      androidConfig.shouldFailWithoutKey(androidApiKey)
+      androidConfig.shouldFailIfKeyIsEmpty(androidApiKey)
     }
 
     "build a seq of defined platforms" in {
       val config = loadConfig(androidConfig)
       new SnsConfiguration(config).platforms shouldBe List(
         Some(GcmConfiguration(
-          config.getString(gcmOsKey).get,
-          config.getString(gcmApiKey).get,
-          config.getString(gcmApplicaitonArnKey).get))
+          androidKey,
+          config.getString(androidApiKey).get,
+          config.getString(androidApplicationArnKey).get)),
+        Some(GcmConfiguration(
+          iosKey,
+          config.getString(iosApiKey).get,
+          config.getString(iosApplicationArnKey).get))
       )
     }
   }
