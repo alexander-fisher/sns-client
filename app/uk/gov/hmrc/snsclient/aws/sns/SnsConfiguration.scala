@@ -18,7 +18,7 @@ package uk.gov.hmrc.snsclient.aws.sns
 
 import javax.inject.{Inject, Singleton}
 
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import uk.gov.hmrc.snsclient.aws.AwsConfiguration
 import uk.gov.hmrc.snsclient.config.ConfigKeys._
 import uk.gov.hmrc.snsclient.config.RequiredKeys
@@ -35,12 +35,19 @@ class SnsConfiguration @Inject()(val configuration: Configuration) extends AwsCo
 case class GcmConfiguration(osName: String, apiKey: String, applicationArn: String)
 
 object GcmConfiguration extends RequiredKeys {
-  def from(os: String, gcmConfig: Configuration): Option[GcmConfiguration] =
-    gcmConfig.getConfig(platformConfigurationKey.replace("PLATFORM", os)).map(_ =>
+  def from(os: String, gcmConfig: Configuration): Option[GcmConfiguration] = {
+    val config = gcmConfig.getConfig(platformConfigurationKey.replace("PLATFORM", os)).map(_ =>
       GcmConfiguration(
         os,
         requiredString(apiKey.replace("PLATFORM", os), gcmConfig),
         requiredString(applicationArnKey.replace("PLATFORM", os), gcmConfig)
       )
     )
+
+    val details = config.map(c => s"""applicationArn="${c.applicationArn}", apiKey="${c.apiKey}"""").getOrElse("NOT CONFIGURED!")
+
+    Logger.info(s"sns-client configuration for $os=[$details]")
+
+    config
+  }
 }

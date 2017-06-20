@@ -83,7 +83,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
     }
 
 
-    "return 200 when 1 of 2 endpoint ARNs are created by SNS" in {
+    "return 200 when 1 of 2 endpoint ARNs are created by SNS and exclude failed tokens" in {
 
       val endpoint = androidEndpoint.copy(registrationToken = "registration-token")
       val endpointStatus = CreateEndpointStatus.failure(endpoint.registrationToken, "Something went horribly wrong")
@@ -94,7 +94,7 @@ class EndpointControllerSpec extends ControllerSpec with DefaultTestData {
       val result = call(controller.createEndpoints, postSnsRequest(url).withJsonBody(toJson(Seq(androidEndpoint, endpoint))))
 
       status(result) mustEqual OK
-      contentAsJson(result) mustEqual toJson(Seq(androidEndpointStatus, endpointStatus) map(p => p.id-> p.endpointArn) toMap)
+      contentAsJson(result) mustEqual toJson(Seq(androidEndpointStatus) map(p => p.id-> p.endpointArn) toMap)
       verify(metrics, times(1)).endpointCreationSuccess()
       verifyNoMoreInteractions(metrics)
     }
