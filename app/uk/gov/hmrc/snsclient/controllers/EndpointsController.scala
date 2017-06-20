@@ -34,7 +34,7 @@ class EndpointsController @Inject() (sns:SnsApi, metrics:Metrics) extends BaseCo
   val createEndpoints: Action[Seq[Endpoint]] = Action.async(parse.json[Seq[Endpoint]]) { implicit req =>
     sns.createEndpoints(req.body)(defaultContext).map { (statuses: Seq[CreateEndpointStatus]) =>
       metrics.endpointCreationSuccess()
-      Ok(Json.toJson(statuses map(p => p.id-> p.endpointArn) toMap))
+      Ok(Json.toJson(statuses filter(_.endpointArn.isDefined) map(p => p.id-> p.endpointArn) toMap))
     } recover {
       case e =>
         Logger.error(s"Batch creation of endpoints failed ${e.getMessage}")
