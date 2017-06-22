@@ -42,6 +42,13 @@ trait DefaultTestData {
     awsStubbingKey -> true
   )
 
+  val withProxyConfig = defaultConfig ++ Map(
+    s"$proxyKey.$proxyUserNameKey" -> "username",
+    s"$proxyKey.$proxyPasswordKey" -> "secret",
+    s"$proxyKey.$proxyHostKey" -> "outbound-proxy",
+    s"$proxyKey.$proxyPortKey" -> 1234
+  )
+
   val defaultSnsConfiguration = new SnsConfiguration(Configuration from defaultConfig)
 
   val windowsNotification: Notification = simpleNotification(UUID.randomUUID().toString, Windows)

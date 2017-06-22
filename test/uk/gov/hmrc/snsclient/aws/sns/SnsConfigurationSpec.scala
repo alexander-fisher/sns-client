@@ -19,6 +19,7 @@ package uk.gov.hmrc.snsclient.aws.sns
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.snsclient.aws.AwsProxy
 import uk.gov.hmrc.snsclient.config.ConfigKeys.{apiKey, applicationArnKey, _}
 import uk.gov.hmrc.snsclient.model.NativeOS.{Android, Ios}
 import uk.gov.hmrc.support.ConfigurationSupport
@@ -85,6 +86,43 @@ class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
           config.getString(iosApiKey).get,
           config.getString(iosApplicationArnKey).get))
       )
+    }
+
+    val proxyConfig = config ++ Map(
+      "proxy.username" -> "username",
+      "proxy.password" -> "secret",
+      "proxy.host" -> "outbound-proxy",
+      "proxy.port" -> 1234
+    )
+
+    "build a proxy given a proxy configuration" in {
+      val config = loadConfig(proxyConfig)
+      new SnsConfiguration(config).awsProxy shouldBe Some(
+        AwsProxy(
+          config.getString("proxy.username").get,
+          config.getString("proxy.password").get,
+          config.getString("proxy.host").get,
+          config.getInt("proxy.port").get
+        )
+      )
+    }
+
+    val proxyKeys = Seq(proxyUserNameKey, proxyPasswordKey, proxyHostKey, proxyPortKey)
+
+    proxyKeys.foreach(missingKey =>
+      s"fail to build a proxy if $proxyKey exists but $missingKey is missing" in {
+        val partialConfig = proxyConfig - s"$proxyKey.$missingKey"
+
+        intercept[IllegalArgumentException] {
+          val config = loadConfig(partialConfig)
+          new SnsConfiguration(config).awsProxy
+        }.getMessage should include(s"property at [$missingKey] was missing")
+      }
+    )
+
+    "not build a proxy when no proxy configuration is provided" in {
+      val noProxyConfig = loadConfig(config)
+      new SnsConfiguration(noProxyConfig).awsProxy shouldBe None
     }
   }
 

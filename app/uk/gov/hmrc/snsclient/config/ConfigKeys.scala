@@ -25,4 +25,9 @@ object ConfigKeys {
   val awsRegionKey = "aws.region"
   val awsStubbingKey = "aws.stubbing"
   val awsRegionOverrideKey = "aws.regionOverrideForStubbing"
+  val proxyKey = "proxy"
+  val proxyUserNameKey = "username"
+  val proxyPasswordKey = "password"
+  val proxyHostKey = "host"
+  val proxyPortKey = "port"
 }
