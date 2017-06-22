@@ -18,6 +18,8 @@ package uk.gov.hmrc.snsclient.config
 
 import play.api.Configuration
 
+import scala.language.postfixOps
+
 trait RequiredKeys {
 
   def requiredString(key:String, config:Configuration): String = {
@@ -25,6 +27,12 @@ trait RequiredKeys {
       case Some(v) if v nonEmpty => v
       case Some(v) => throw new IllegalArgumentException(s"property at [$key] was empty")
       case _ => throw new IllegalArgumentException(s"property at [$key] was missing")
+    }
+  }
+
+  def requiredInt(key:String, config:Configuration): Int = {
+    try requiredString(key, config) toInt catch {
+      case _: NumberFormatException => throw new IllegalArgumentException(s"property at [$key] was not an integer")
     }
   }
 

@@ -19,6 +19,7 @@ package uk.gov.hmrc.snsclient.aws.sns
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.snsclient.aws.AwsProxy
 import uk.gov.hmrc.snsclient.config.ConfigKeys.{apiKey, applicationArnKey, _}
 import uk.gov.hmrc.snsclient.model.NativeOS.{Android, Ios}
 import uk.gov.hmrc.support.ConfigurationSupport
@@ -85,6 +86,52 @@ class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
           config.getString(iosApiKey).get,
           config.getString(iosApplicationArnKey).get))
       )
+    }
+
+    val proxyConfig = config ++ Map(
+      s"$proxyKey.$proxyUserNameKey" -> "username",
+      s"$proxyKey.$proxyPasswordKey" -> "secret",
+      s"$proxyKey.$proxyHostKey" -> "outbound-proxy",
+      s"$proxyKey.$proxyPortKey" -> 1234
+    )
+
+    "build a proxy given a proxy configuration" in {
+      val config = loadConfig(proxyConfig)
+      new SnsConfiguration(config).awsProxy shouldBe Some(
+        AwsProxy(
+          config.getString(s"$proxyKey.$proxyUserNameKey").get,
+          config.getString(s"$proxyKey.$proxyPasswordKey").get,
+          config.getString(s"$proxyKey.$proxyHostKey").get,
+          config.getInt(s"$proxyKey.$proxyPortKey").get
+        )
+      )
+    }
+
+    val proxyKeys = Seq(proxyUserNameKey, proxyPasswordKey, proxyHostKey, proxyPortKey)
+
+    proxyKeys.foreach(missingKey =>
+      s"fail to build a proxy if $proxyKey exists but $missingKey is missing" in {
+        val partialConfig = proxyConfig - s"$proxyKey.$missingKey"
+
+        intercept[IllegalArgumentException] {
+          val config = loadConfig(partialConfig)
+          new SnsConfiguration(config).awsProxy
+        }.getMessage should include(s"property at [$missingKey] was missing")
+      }
+    )
+
+    s"fail to build a proxy if $proxyKey.$proxyPortKey is not an integer" in {
+      val invalidConfig = proxyConfig - s"$proxyKey.$proxyPortKey" + (s"$proxyKey.$proxyPortKey" -> "foo")
+
+      intercept[IllegalArgumentException] {
+        val config = loadConfig(invalidConfig)
+        new SnsConfiguration(config).awsProxy
+      }.getMessage should include(s"property at [$proxyPortKey] was not an integer")
+    }
+
+    "not build a proxy when no proxy configuration is provided" in {
+      val noProxyConfig = loadConfig(config)
+      new SnsConfiguration(noProxyConfig).awsProxy shouldBe None
     }
   }
 

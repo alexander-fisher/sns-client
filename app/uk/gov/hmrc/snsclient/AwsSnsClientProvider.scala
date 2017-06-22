@@ -18,6 +18,7 @@ package uk.gov.hmrc.snsclient
 
 import javax.inject.{Inject, Singleton}
 
+import com.amazonaws.ClientConfigurationFactory
 import com.amazonaws.auth.{AWSCredentials, AWSStaticCredentialsProvider}
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.sns.{AmazonSNSAsync, AmazonSNSAsyncClientBuilder}
@@ -28,19 +29,29 @@ import uk.gov.hmrc.snsclient.aws.sns.SnsConfiguration
 import scala.language.postfixOps
 
 @Singleton
-class AwsSnsClientProvider @Inject()(snsConfig: SnsConfiguration) extends Provider[AmazonSNSAsync] {
+class AwsSnsClientProvider @Inject()(snsConfig: SnsConfiguration, clientConfigurationFactory: ClientConfigurationFactory) extends Provider[AmazonSNSAsync] {
 
   import snsConfig._
   import uk.gov.hmrc.snsclient.config.ConfigKeys._
 
   private def fail(error: String) = throw new ProvisionException(error)
 
-  private def withNonEmptyValue[T, O](key:String, optionalValue:Option[T])(f: T => O): O =
+  private def withNonEmptyValue[T, O](key: String, optionalValue: Option[T])(f: T => O): O =
     optionalValue map f getOrElse fail(s"[$key] was empty")
 
   override def get(): AmazonSNSAsync = {
 
+    val clientConfig = clientConfigurationFactory getConfig
+
+    snsConfig.awsProxy.foreach { proxy =>
+      clientConfig.setProxyUsername(proxy.username)
+      clientConfig.setProxyPassword(proxy.password)
+      clientConfig.setProxyHost(proxy.host)
+      clientConfig.setProxyPort(proxy.port)
+    }
+
     val builderWithCreds = AmazonSNSAsyncClientBuilder.standard()
+      .withClientConfiguration(clientConfig)
       .withCredentials(new AWSStaticCredentialsProvider(new AWSCredentials {
         override def getAWSAccessKeyId: String = snsConfig.accessKey
         override def getAWSSecretKey: String = snsConfig.secret
