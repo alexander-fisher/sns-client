@@ -89,20 +89,20 @@ class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
     }
 
     val proxyConfig = config ++ Map(
-      "proxy.username" -> "username",
-      "proxy.password" -> "secret",
-      "proxy.host" -> "outbound-proxy",
-      "proxy.port" -> 1234
+      s"$proxyKey.$proxyUserNameKey" -> "username",
+      s"$proxyKey.$proxyPasswordKey" -> "secret",
+      s"$proxyKey.$proxyHostKey" -> "outbound-proxy",
+      s"$proxyKey.$proxyPortKey" -> 1234
     )
 
     "build a proxy given a proxy configuration" in {
       val config = loadConfig(proxyConfig)
       new SnsConfiguration(config).awsProxy shouldBe Some(
         AwsProxy(
-          config.getString("proxy.username").get,
-          config.getString("proxy.password").get,
-          config.getString("proxy.host").get,
-          config.getInt("proxy.port").get
+          config.getString(s"$proxyKey.$proxyUserNameKey").get,
+          config.getString(s"$proxyKey.$proxyPasswordKey").get,
+          config.getString(s"$proxyKey.$proxyHostKey").get,
+          config.getInt(s"$proxyKey.$proxyPortKey").get
         )
       )
     }
@@ -119,6 +119,15 @@ class SnsConfigurationSpec extends UnitSpec with ConfigurationSupport {
         }.getMessage should include(s"property at [$missingKey] was missing")
       }
     )
+
+    s"fail to build a proxy if $proxyKey.$proxyPortKey is not an integer" in {
+      val invalidConfig = proxyConfig - s"$proxyKey.$proxyPortKey" + (s"$proxyKey.$proxyPortKey" -> "foo")
+
+      intercept[IllegalArgumentException] {
+        val config = loadConfig(invalidConfig)
+        new SnsConfiguration(config).awsProxy
+      }.getMessage should include(s"property at [$proxyPortKey] was not an integer")
+    }
 
     "not build a proxy when no proxy configuration is provided" in {
       val noProxyConfig = loadConfig(config)
