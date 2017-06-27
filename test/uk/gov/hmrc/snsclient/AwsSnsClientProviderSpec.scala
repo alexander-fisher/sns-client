@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.snsclient
 
+import com.amazonaws.Protocol.HTTPS
 import com.amazonaws.{ClientConfiguration, ClientConfigurationFactory}
 import com.google.inject.ProvisionException
 import org.junit.runner.RunWith
@@ -25,6 +26,8 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.snsclient.aws.sns.SnsConfiguration
 import uk.gov.hmrc.snsclient.config.ConfigKeys._
 import uk.gov.hmrc.support.{ConfigurationSupport, DefaultTestData, ResettingMockitoSugar}
+
+import scala.util.Try
 
 @RunWith(classOf[JUnitRunner])
 class AwsSnsClientProviderSpec extends UnitSpec with ConfigurationSupport with DefaultTestData with ResettingMockitoSugar {
@@ -72,12 +75,31 @@ class AwsSnsClientProviderSpec extends UnitSpec with ConfigurationSupport with D
 
       clientConfiguration.getProxyUsername shouldBe null
       clientConfiguration.getProxyPassword shouldBe null
-      clientConfiguration.getProxyHost shouldBe null
-      clientConfiguration.getProxyPort shouldBe -1
+      clientConfiguration.getProxyHost shouldBe getProxyHostProperty(clientConfiguration)
+      clientConfiguration.getProxyPort shouldBe getProxyPortProperty(clientConfiguration)
     }
   }
 
   private def buildClient(config: Map[String, Any], configFactory: ClientConfigurationFactory = new ClientConfigurationFactory) = {
     new AwsSnsClientProvider(new SnsConfiguration(loadConfig(config)), configFactory) get()
+  }
+
+  // Required to mimic AWS client configuration library
+  private def getProxyHostProperty(config: ClientConfiguration): String = {
+    if (config.getProtocol eq HTTPS) {
+      System.getProperty("https.proxyHost")
+    } else {
+      System.getProperty("http.proxyHost")
+    }
+  }
+
+  private def getProxyPortProperty(config: ClientConfiguration): Int = {
+    Try(
+      (if (config.getProtocol eq HTTPS) {
+        System.getProperty("https.proxyPort")
+      } else {
+        System.getProperty("http.proxyPort")
+      }).toInt
+    ).getOrElse(-1)
   }
 }
