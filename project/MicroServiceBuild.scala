@@ -8,14 +8,14 @@ object MicroServiceBuild extends Build with MicroService {
 
   override lazy val appDependencies: Seq[ModuleID] = compile ++ test()
 
-  private val bootstrap = "5.9.0"
+  private val bootstrap = "5.16.0"
   private val logback = "3.1.0"
-  private val playBinders = "2.0.0"
-  private val playConfig = "3.1.0"
-  private val playHealth = "2.0.0"
+  private val playBinders = "2.1.0"
+  private val playConfig = "4.3.0"
+  private val playHealth = "2.1.0"
   private val awsSns = "1.11.97"
-  private val playHmrcApiVersion = "1.3.0"
-  private val graphiteMetrics = "3.1.0"
+  private val playHmrcApiVersion = "1.4.0"
+  private val graphiteMetrics = "3.2.0"
 
 
   val compile = Seq(
@@ -31,7 +31,7 @@ object MicroServiceBuild extends Build with MicroService {
   )
 
   private val scalaTestPlus = "1.5.1"
-  private val hmrcTest = "2.2.0"
+  private val hmrcTest = "2.3.0"
   private val scalactic = "2.2.6"
   private val pegdown = "1.6.0"
   private val mockitoCore = "1.9.0"
