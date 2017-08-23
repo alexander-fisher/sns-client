@@ -2,11 +2,11 @@ import play.core.PlayVersion
 import play.sbt.PlayImport._
 import sbt._
 
-object MicroServiceBuild extends Build with MicroService {
+object AppDependencies {
 
   val appName = "sns-client"
 
-  override lazy val appDependencies: Seq[ModuleID] = compile ++ test()
+  lazy val appDependencies: Seq[ModuleID] = compile ++ test()
 
   private val bootstrap = "5.9.0"
   private val logback = "3.1.0"
