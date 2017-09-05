@@ -76,7 +76,7 @@ class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with
 
       adapter.publish(androidNotificationWithMessageId)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe """{"GCM":"{\"data\":{\"messageId\":\"123\",\"text\":\"Tax is fun!\"}}"}"""
+      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
       captor.getValue.getTargetArn shouldBe androidNotificationWithMessageId.endpointArn
     }
 
@@ -96,7 +96,7 @@ class SnsClientScalaAdapterSpec extends UnitSpec with ResettingMockitoSugar with
 
       adapter.publish(iosNotificationWithMessageId)
       verify(client).publishAsync(captor.capture(), handler.capture())
-      captor.getValue.getMessage shouldBe """{"GCM":"{\"data\":{\"messageId\":\"123\",\"text\":\"Tax is fun!\"}}"}"""
+      captor.getValue.getMessage shouldBe "{\"GCM\":\"{\\\"notification\\\":{\\\"body\\\":\\\"Tax is fun!\\\"},\\\"data\\\":{\\\"messageId\\\":\\\"123\\\"}}\"}"
       captor.getValue.getTargetArn shouldBe iosNotificationWithMessageId.endpointArn
     }
 
