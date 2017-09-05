@@ -77,12 +77,7 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
     ))
 
   def buildFcmPayload(message: String, messageId: Option[String]): JsObject = messageId match {
-    case Some(id) => JsObject(Seq(
-      "data" -> JsObject(Seq(
-        "messageId" -> JsString(id),
-        "text" -> JsString(message)
-      ))
-    ))
+    case Some(id) => buildDataPayload(message, id)
     case None => JsObject(Seq(
       "notification" -> JsObject(Seq(
         "text" -> JsString(message)
@@ -92,10 +87,10 @@ class SnsClientScalaAdapter @Inject()(client: AmazonSNSAsync) extends AwsAsyncSu
 
   def buildWnsMessage(message: String, messageId: String): JsObject = JsObject(
     Seq(
-      "WNS" -> JsString(buildWnsPayload(message, messageId).toString())
+      "WNS" -> JsString(buildDataPayload(message, messageId).toString())
     ))
 
-  def buildWnsPayload(message: String, messageId: String): JsObject = JsObject(
+  def buildDataPayload(message: String, messageId: String): JsObject = JsObject(
     Seq(
       "notification" -> JsObject(Seq(
         "body" -> JsString(message)
