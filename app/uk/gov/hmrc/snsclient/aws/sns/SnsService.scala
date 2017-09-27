@@ -37,18 +37,23 @@ class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arn
 
     val publishRequests = notifications.map(n => (n, client.publish(n)))
 
+    def message(notification: Notification) : String = {
+      notification.messageId.map(id ⇒ s"with message id: [$id]").getOrElse("")
+    }
+
     traverse(publishRequests) {
       case (request, result) => result.map {
         _ =>
           metrics.publishSuccess()
+          Logger.info(s"Publish request [${request.id}] ${message(request)}success")
           DeliveryStatus.success(request.id)
       } recover {
         case ex: EndpointDisabledException =>
-          Logger.error(s"Publish request [${request.id}] failed because [${ex.getMessage}]")
+          Logger.error(s"Publish request [${request.id}] ${message(request)}failed because [${ex.getMessage}]")
           metrics.endpointDisabledFailure()
           DeliveryStatus.disabled(request.id, ex.getMessage)
         case ex =>
-          Logger.error(s"Publish request [${request.id}] failed because [${ex.getMessage}]")
+          Logger.error(s"Publish request [${request.id}] ${message(request)}failed because [${ex.getMessage}]")
           metrics.publishFailure()
           DeliveryStatus.failure(request.id, ex.getMessage)
       }
