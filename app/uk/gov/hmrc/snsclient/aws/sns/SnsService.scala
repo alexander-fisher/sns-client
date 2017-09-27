@@ -38,9 +38,7 @@ class SnsService @Inject()(client: SnsClientScalaAdapter, @Named("arnsByOs") arn
     val publishRequests = notifications.map(n => (n, client.publish(n)))
 
     def message(notification: Notification) : String = {
-      if (notification.messageId.isDefined)
-        s"with message id: [${notification.messageId.get}]"
-      else ""
+      notification.messageId.map(id ⇒ s"with message id: [$id]").getOrElse("")
     }
 
     traverse(publishRequests) {
