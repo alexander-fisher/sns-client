@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.support
 
-import org.scalatest.Suite
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatest.TestSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 
-trait OneAppPerSuiteWithoutMetrics extends OneAppPerSuite { this: Suite =>
+trait OneAppPerSuiteWithoutMetrics extends GuiceOneAppPerSuite { this: TestSuite =>
 
   override implicit lazy val app: Application = MetricsDisabled.appWithMetricsDisabled()
 }

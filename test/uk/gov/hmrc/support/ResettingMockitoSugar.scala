@@ -17,8 +17,8 @@
 package uk.gov.hmrc.support
 
 import org.mockito.Mockito
+import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, Suite}
-import org.scalatest.mock.MockitoSugar
 
 import scala.reflect.Manifest
 
