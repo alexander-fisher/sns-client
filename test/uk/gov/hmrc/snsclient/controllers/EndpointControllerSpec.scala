@@ -17,20 +17,19 @@
 package uk.gov.hmrc.snsclient.controllers
 
 import org.junit.runner.RunWith
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers.{eq => eqs, _}
 import org.mockito.Mockito._
-import org.mockito.Matchers.{eq => eqs}
 import org.scalatest.junit.JUnitRunner
 import play.api.libs.json.Json._
 import play.api.test.Helpers._
 import uk.gov.hmrc.snsclient.aws.sns.SnsApi
 import uk.gov.hmrc.snsclient.metrics.Metrics
+import uk.gov.hmrc.snsclient.model.JsonFormats._
 import uk.gov.hmrc.snsclient.model._
 import uk.gov.hmrc.support.{ControllerSpec, DefaultTestData}
-import uk.gov.hmrc.snsclient.model.JsonFormats._
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future._
+import scala.concurrent.{ExecutionContext, Future}
 
 
 @RunWith(classOf[JUnitRunner])
